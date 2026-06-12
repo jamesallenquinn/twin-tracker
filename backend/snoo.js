@@ -1,40 +1,40 @@
 // Happiest Baby / SNOO unofficial API client (read-only).
-// Endpoints + auth mirror the maintained pysnooapi library (current /us/v2 API).
+// Current API host + endpoints mirror the maintained pysnoo2 library.
 
-const BASE = "https://snoo-api.happiestbaby.com";
-const APP_HEADERS = {
-  "Accept": "*/*",
-  "Content-Type": "application/json",
-  "User-Agent": "SNOO/2.4.0 (com.happiestbaby.snooapp;) Alamofire/5.3.0"
-};
+const BASE = "https://api-us-east-1-prod.happiestbaby.com";
+const UA = "okhttp/4.7.2";
 
 async function snooLogin(email, password) {
-  const res = await fetch(BASE + "/us/v2/login", {
+  const res = await fetch(BASE + "/us/v3/login", {
     method: "POST",
-    headers: APP_HEADERS,
-    body: JSON.stringify({ username: email, password: password })
+    headers: { "Accept": "application/json", "Content-Type": "application/json;charset=UTF-8", "User-Agent": UA },
+    body: JSON.stringify({ grant_type: "password", username: email, password: password, client_id: "snoo_client" })
   });
   const text = await res.text();
   if (!res.ok) throw new Error("SNOO login " + res.status + ": " + text.slice(0, 300));
   const data = JSON.parse(text);
   if (!data.access_token) throw new Error("SNOO login: no access_token: " + text.slice(0, 200));
-  // Authorization header value is "{token_type} {access_token}", e.g. "bearer eyJ..."
-  return { auth: (data.token_type || "bearer") + " " + data.access_token, raw: data };
+  return { auth: "Bearer " + data.access_token, raw: data };
 }
 
 async function snooGet(auth, path, params) {
   const url = new URL(BASE + path);
   if (params) Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
-  const res = await fetch(url, { headers: { "Accept": "*/*", "Authorization": auth, "User-Agent": APP_HEADERS["User-Agent"] } });
+  const res = await fetch(url, { headers: { "Accept": "application/json", "Authorization": auth, "User-Agent": UA } });
   const text = await res.text();
   if (!res.ok) throw new Error("SNOO GET " + path + " " + res.status + ": " + text.slice(0, 300));
   return text ? JSON.parse(text) : null;
 }
 
-// daily-aggregated startTime format: "YYYY-MM-DDTHH:MM:SS.000Z"
-function dailyStartTime(d) {
-  return d.toISOString().slice(0, 19) + ".000Z";
-}
+const EP = {
+  me: "/us/me/v10/me",
+  devices: "/hds/me/v11/devices",
+  baby: "/us/me/v10/baby",
+  lastSession: id => `/ss/me/v10/babies/${id}/sessions/last`,
+  daily: id => `/ss/v2/babies/${id}/sessions/aggregated/daily`
+};
+
+function dailyStartTime(d) { return d.toISOString().slice(0, 19) + ".000Z"; }
 
 async function snooDiscover(email, password) {
   const { auth } = await snooLogin(email, password);
@@ -44,32 +44,36 @@ async function snooDiscover(email, password) {
     try { out[label] = await snooGet(auth, path, params); console.log(`[snoo] ${label}: OK`); }
     catch (e) { out[label] = { error: String(e.message) }; console.log(`[snoo] ${label}: ${e.message}`); }
   }
-  await tryGet("me", "/us/me");
-  await tryGet("devices", "/me/devices");
-  await tryGet("baby", "/us/v3/me/baby");
-  await tryGet("lastSession", "/analytics/sessions/last");
+  await tryGet("me", EP.me);
+  await tryGet("devices", EP.devices);
+  await tryGet("baby", EP.baby);
 
-  // try per-baby daily detail using whatever baby id we can find
-  const babyId = (out.baby && (out.baby._id || out.baby.babyId)) ||
-    (Array.isArray(out.devices) && out.devices[0] && out.devices[0].baby);
-  if (babyId) {
+  // collect candidate baby ids from devices + baby
+  const babyIds = new Set();
+  if (Array.isArray(out.devices)) out.devices.forEach(d => { if (d.baby) babyIds.add(d.baby); });
+  if (out.baby && (out.baby._id || out.baby.babyId)) babyIds.add(out.baby._id || out.baby.babyId);
+
+  out.sessions = {};
+  for (const id of babyIds) {
+    try { out.sessions[id] = await snooGet(auth, EP.lastSession(id)); console.log(`[snoo] lastSession(${id}): OK`); }
+    catch (e) { out.sessions[id] = { error: String(e.message) }; console.log(`[snoo] lastSession(${id}): ${e.message}`); }
+  }
+  // probe daily detail on first baby id
+  const firstId = [...babyIds][0];
+  if (firstId) {
     const start = new Date(); start.setUTCHours(0, 0, 0, 0);
-    await tryGet("dailyToday", `/ss/v2/babies/${babyId}/sessions/aggregated/daily`,
-      { detailedLevels: "true", levels: "true", startTime: dailyStartTime(start) });
-  } else {
-    console.log("[snoo] no baby id found to query daily detail");
+    await tryGet("dailyProbe", EP.daily(firstId), { detailedLevels: "true", levels: "true", startTime: dailyStartTime(start) });
   }
 
-  // Summary that won't leak full payloads but shows shape
-  console.log("[snoo] me keys:", out.me && !out.me.error ? Object.keys(out.me).join(",") : out.me);
+  console.log("[snoo] me keys:", out.me && !out.me.error ? Object.keys(out.me).join(",") : JSON.stringify(out.me));
   if (Array.isArray(out.devices)) {
     console.log(`[snoo] devices: ${out.devices.length}`);
-    out.devices.forEach((d, i) => console.log(`   device[${i}] serial=${d.serialNumber} baby=${d.baby} name=${d.name || d.deviceName || "?"}`));
-  } else { console.log("[snoo] devices:", out.devices); }
-  console.log("[snoo] baby keys:", out.baby && !out.baby.error ? Object.keys(out.baby).join(",") : out.baby);
-  console.log("[snoo] lastSession:", JSON.stringify(out.lastSession).slice(0, 500));
-  console.log("[snoo] dailyToday:", JSON.stringify(out.dailyToday).slice(0, 1500));
+    out.devices.forEach((d, i) => console.log(`   device[${i}] serial=${d.serialNumber} baby=${d.baby} keys=${Object.keys(d).join(",")}`));
+  } else console.log("[snoo] devices:", JSON.stringify(out.devices).slice(0, 300));
+  console.log("[snoo] baby:", JSON.stringify(out.baby).slice(0, 400));
+  console.log("[snoo] sessions:", JSON.stringify(out.sessions).slice(0, 900));
+  console.log("[snoo] dailyProbe:", JSON.stringify(out.dailyProbe).slice(0, 1200));
   return { auth, data: out };
 }
 
-module.exports = { snooLogin, snooGet, snooDiscover, dailyStartTime };
+module.exports = { snooLogin, snooGet, snooDiscover, dailyStartTime, EP };
