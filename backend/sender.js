@@ -13,7 +13,7 @@ const TIRED_AWAKE_MIN = 3 * 60;     // awake this long -> tired warning
 const FEED_DUE_MIN = 3 * 60;        // since last bottle -> feed due
 const NAP_TOO_LONG_MIN = 2 * 60;    // active nap this long -> napping warning
 const THROTTLE_MIN = 90;            // don't repeat the same alert within this window
-const TZ = "America/New_York";
+const TZ = "America/Los_Angeles";
 const TWIN_BABY_IDS = { Rowan: null, Julian: null }; // resolved by name at runtime
 const BABIES = ["Rowan", "Julian"];
 
