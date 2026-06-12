@@ -2,7 +2,7 @@ name: Twin Tracker backend
 
 on:
   schedule:
-    - cron: "0 */6 * * *"    # every 6h for now (no-op build); tighten to */15 once push is live
+    - cron: "*/15 * * * *"   # every 15 min: import SNOO sessions + send due alerts
   workflow_dispatch:          # allow manual runs (and dry runs)
     inputs:
       dry_run:

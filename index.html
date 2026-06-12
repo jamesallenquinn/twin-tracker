@@ -193,7 +193,7 @@ body.night .quickHint,body.night .entryMeta{color:#7e8398;}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, setDoc, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 const firebaseConfig = {apiKey:"AIzaSyBfeIYcl4QDymvqfN8n7r8nhc72sbJP9y8",authDomain:"twin-feeding-log-tracker.firebaseapp.com",projectId:"twin-feeding-log-tracker",storageBucket:"twin-feeding-log-tracker.firebasestorage.app",messagingSenderId:"508696251735",appId:"1:508696251735:web:bcf62a17e968a0c628c212"};
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
@@ -240,11 +240,33 @@ if(perm==="granted"){el.innerHTML="✓ Notifications are enabled on this device.
 else if(perm==="denied"){el.innerHTML="Notifications are blocked. Re-enable them for Twin Tracker in your device settings.";if(btn)btn.innerHTML="Enable Notifications";}
 else{el.innerHTML=isStandalone()?"Tap below to allow notifications on this device.":"Add Twin Tracker to your Home Screen and open it from there, then enable notifications.";if(btn)btn.innerHTML="Enable Notifications";}
 }
+const VAPID_PUBLIC="BMebMwYKVio9fMJorse4IsEWOrZFEtg1ZLk2l0KJvKekAJMCeaF65PsCDNxUFcZs-LLu-oxlW7RKAqoUoJHP87c";
+function urlBase64ToUint8Array(base64String){
+let padding="=".repeat((4-base64String.length%4)%4);
+let base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+let raw=atob(base64),arr=new Uint8Array(raw.length);
+for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+return arr;
+}
+async function hashEndpoint(endpoint){
+let buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(endpoint));
+return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,40);
+}
+async function subscribePush(){
+if(!("serviceWorker" in navigator)||!("PushManager" in window))return false;
+let reg=await navigator.serviceWorker.ready;
+let sub=await reg.pushManager.getSubscription();
+if(!sub){sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC)});}
+let j=sub.toJSON(),id=await hashEndpoint(j.endpoint);
+await setDoc(doc(db,"pushSubs",id),{endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,loggedBy:loggedByName||"",updatedAt:new Date().toISOString()});
+return true;
+}
 async function enableNotifications(){
 if(!("Notification" in window)){alert("This browser doesn’t support notifications.");return;}
 try{
 let perm=await Notification.requestPermission();
 if(perm==="granted"){
+try{await subscribePush();}catch(subErr){console.error("push subscribe failed",subErr);}
 if("serviceWorker" in navigator){let reg=await navigator.serviceWorker.ready;reg.showNotification("Twin Tracker",{body:"Notifications are on. 🍼",icon:"https://i.ibb.co/Zzcnht8k/E47-ECDA6-E87-B-42-D2-92-E0-A4-C072-D94864.png"});}
 }else if(perm==="denied"){alert("Notifications are blocked. You can re-enable them in your device settings.");}
 }catch(e){alert("Could not enable notifications: "+e.message);}
