@@ -95,7 +95,16 @@ function evaluateAlerts(feeds, naps) {
 }
 
 async function main() {
-  console.log(`[twin-tracker] start  DRY_RUN=${DRY_RUN}  ${new Date().toISOString()}`);
+  console.log(`[twin-tracker] start  DRY_RUN=${DRY_RUN}  MODE=${process.env.MODE || "default"}  ${new Date().toISOString()}`);
+
+  if (process.env.MODE === "snoo-discover") {
+    const { snooDiscover } = require("./snoo");
+    const email = process.env.SNOO_EMAIL, password = process.env.SNOO_PASSWORD;
+    if (!email || !password) { console.error("SNOO_EMAIL/SNOO_PASSWORD not set."); process.exit(1); }
+    await snooDiscover(email, password);
+    return;
+  }
+
   const [feeds, naps] = await Promise.all([listCollection("feedingLogs"), listCollection("napLogs")]);
   console.log(`[twin-tracker] loaded ${feeds.length} feeds, ${naps.length} naps`);
 

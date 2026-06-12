@@ -9,6 +9,11 @@ on:
         description: "Dry run (no pushes sent, no SNOO writes)"
         type: boolean
         default: true
+      mode:
+        description: "Run mode"
+        type: choice
+        default: default
+        options: [default, snoo-discover]
 
 jobs:
   run:
@@ -25,6 +30,7 @@ jobs:
         working-directory: backend
         env:
           DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          MODE: ${{ inputs.mode || 'default' }}
           VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
