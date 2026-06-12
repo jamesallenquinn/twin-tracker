@@ -3,7 +3,7 @@
 // cache only as an offline fallback. Cross-origin requests (Firebase, gstatic)
 // are NOT intercepted, so live sync behaves exactly as before.
 
-const CACHE = "twin-tracker-v1";
+const CACHE = "twin-tracker-v2";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest"];
 
 self.addEventListener("install", function (event) {

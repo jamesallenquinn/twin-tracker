@@ -213,7 +213,7 @@ formulaPricePerGram:DEFAULT_FORMULA_PRICE_PER_GRAM
 };
 let tummyTimeState=loadTummyTimeState();
 let themeMode=localStorage.getItem("twinTrackerTheme")||"auto";
-let loggedByName=localStorage.getItem("twinTrackerLoggedBy")||"";
+let loggedByName=localStorage.getItem("twinTrackerLoggedBy")||"Erin";
 
 function applyTheme(){
 let night=themeMode==="dark"||(themeMode==="auto"&&isBedtimeHours(new Date()));
