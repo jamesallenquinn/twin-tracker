@@ -1,0 +1,33 @@
+name: Twin Tracker backend
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes
+  workflow_dispatch:          # allow manual runs (and dry runs)
+    inputs:
+      dry_run:
+        description: "Dry run (no pushes sent, no SNOO writes)"
+        type: boolean
+        default: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install backend deps
+        working-directory: backend
+        run: npm install --no-audit --no-fund
+      - name: Run backend
+        working-directory: backend
+        env:
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
+          VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          SNOO_EMAIL: ${{ secrets.SNOO_EMAIL }}
+          SNOO_PASSWORD: ${{ secrets.SNOO_PASSWORD }}
+        run: node sender.js

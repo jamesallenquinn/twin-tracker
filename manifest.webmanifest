@@ -1,0 +1,25 @@
+{
+  "name": "Twin Tracker",
+  "short_name": "Twins",
+  "description": "Live shared bottle and sleep tracker for twins",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f3ee",
+  "theme_color": "#1f1f2e",
+  "icons": [
+    {
+      "src": "https://i.ibb.co/Zzcnht8k/E47-ECDA6-E87-B-42-D2-92-E0-A4-C072-D94864.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://i.ibb.co/Zzcnht8k/E47-ECDA6-E87-B-42-D2-92-E0-A4-C072-D94864.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

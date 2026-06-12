@@ -1,0 +1,11 @@
+{
+  "name": "twin-tracker-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Scheduled backend for Twin Tracker: web-push alerts + SNOO import",
+  "main": "sender.js",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

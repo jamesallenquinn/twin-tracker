@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twin Tracker</title>
+<link rel="apple-touch-icon" href="https://i.ibb.co/Zzcnht8k/E47-ECDA6-E87-B-42-D2-92-E0-A4-C072-D94864.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f1f2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Twin Tracker">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:#f7f3ee;margin:0;padding:15px;color:#222;}
+h1{text-align:center;margin-bottom:5px;}.subtitle{text-align:center;color:#666;margin-bottom:20px;font-size:14px;}.refreshBtn{background:#444;font-size:14px;padding:10px;margin-bottom:8px;}.status{text-align:center;font-size:13px;color:#666;margin-bottom:12px;}
+.scoreboard{background:#1f1f2e;color:white;border-radius:18px;padding:14px;margin-bottom:15px;box-shadow:0 4px 12px rgba(0,0,0,.18);border:3px solid #44445f;}.score-title{text-align:center;font-weight:900;font-size:18px;letter-spacing:1px;margin-bottom:12px;color:#ffd966;}.score-card{margin-bottom:18px;}.score-row{display:flex;justify-content:space-between;align-items:center;font-weight:800;margin-bottom:6px;gap:8px;}.score-name{font-size:16px;}.score-bottles{font-size:12px;color:#cfe2ff;font-weight:800;}.score-amount{font-size:14px;color:#d9ead3;}.progress-shell{height:24px;background:#111;border-radius:12px;overflow:hidden;border:2px solid #666;position:relative;}.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#5da9e9,#8bc34a,#ffd966);transition:width .3s ease;}.goal-tick{position:absolute;top:-2px;bottom:-2px;left:71.43%;width:3px;background:#fff;box-shadow:0 0 6px #fff;z-index:2;}.goal-label{position:absolute;top:25px;left:71.43%;transform:translateX(-50%);font-size:10px;font-weight:900;color:#ffd966;white-space:nowrap;}.progress-wrap{position:relative;padding-bottom:18px;}.score-message{font-size:13px;font-weight:800;margin-top:6px;color:#ffd966;text-align:right;}.daily-total{background:#111827;border:2px solid #555b7a;border-radius:14px;padding:10px;margin-top:12px;color:#fff;box-shadow:inset 0 0 12px rgba(255,255,255,.06);}.daily-total-title{text-align:center;font-size:13px;font-weight:900;color:#ffd966;letter-spacing:.8px;margin-bottom:6px;}.daily-total-line{display:flex;justify-content:space-between;font-size:14px;font-weight:800;margin:4px 0;}.bottle-emoji-row{font-size:20px;line-height:1.35;word-break:break-word;margin-top:8px;text-align:center;background:#080b12;border-radius:10px;padding:8px;min-height:28px;}
+.parent-progress{background:#111827;border:2px solid #555b7a;border-radius:14px;padding:10px;margin-top:12px;color:#fff;box-shadow:inset 0 0 12px rgba(255,255,255,.06);transition:border-color .3s ease,box-shadow .3s ease,transform .3s ease;}.parent-progress.power-up{border-color:#ffd966;box-shadow:0 0 18px rgba(255,217,102,.95),0 0 38px rgba(255,162,0,.55),inset 0 0 18px rgba(255,217,102,.2);animation:powerPulse 1.4s ease-in-out infinite;}.parent-progress-title{text-align:center;font-size:13px;font-weight:900;color:#ffd966;letter-spacing:.8px;margin-bottom:8px;}.sync-row,.level-row,.tummy-row{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:14px;margin:5px 0;gap:8px;}.sync-score{color:#8d93a1;text-transform:uppercase;letter-spacing:.5px;}.sync-score.active{color:#ffe9a3;text-shadow:0 0 8px #ffd966,0 0 18px #ff9f1c;animation:goldTextPulse 1.2s ease-in-out infinite;}.sync-score.inactive{color:#8d93a1;text-shadow:none;}.level-score{color:#d9ead3;}.power-up .level-score,.power-up .parent-progress-title,.power-up .level-note{color:#ffe9a3;text-shadow:0 0 8px #ffd966,0 0 18px #ff9f1c;}.level-shell{height:18px;background:#080b12;border:2px solid #666;border-radius:10px;overflow:hidden;position:relative;margin-top:8px;}.level-fill{height:100%;width:0%;background:linear-gradient(90deg,#7e57c2,#5da9e9,#ffd966);transition:width .3s ease;}.power-up .level-fill{background:linear-gradient(90deg,#fff4b8,#ffd966,#ff9f1c,#fff4b8);background-size:220% 100%;animation:goldRush 1.1s linear infinite;}.level-note{font-size:12px;color:#cfd3ff;text-align:right;margin-top:5px;font-weight:800;}.tummy-row{margin-top:10px;color:#ffe9a3;}.tummy-score{color:#ffd966;white-space:nowrap;}.tummy-button{background:#8a5a00;font-size:15px;padding:11px;margin-top:8px;border:2px solid rgba(255,217,102,.45);box-shadow:0 0 10px rgba(255,217,102,.22);}.tummy-button.active{background:linear-gradient(90deg,#d68a00,#ffd966,#f5a400);color:#291700;text-shadow:0 1px 0 rgba(255,255,255,.45);box-shadow:0 0 14px rgba(255,217,102,.8),0 0 28px rgba(255,162,0,.45);}@keyframes powerPulse{0%,100%{transform:translateY(0);filter:saturate(1);}50%{transform:translateY(-1px);filter:saturate(1.35);}}@keyframes goldRush{0%{background-position:0% 50%;}100%{background-position:220% 50%;}}@keyframes goldTextPulse{0%,100%{filter:saturate(1);transform:scale(1);}50%{filter:saturate(1.35);transform:scale(1.04);}}
+.tabs,.logTabs{display:flex;gap:8px;margin-bottom:15px;position:sticky;top:0;background:#f7f3ee;padding-bottom:10px;z-index:100;}.logTabs{position:static;margin-top:18px;padding-bottom:0;}.tabBtn,.logTabBtn{flex:1;background:#ddd;color:#222;border:none;padding:12px 8px;border-radius:14px;font-size:16px;font-weight:800;}.logTabBtn{font-size:16px;padding:12px;}.tabBtn.active,.logTabBtn.active{background:#333;color:white;}
+.card{background:white;border-radius:18px;padding:15px;margin-bottom:15px;box-shadow:0 3px 10px rgba(0,0,0,.08);}h2{margin:0;}h3{margin:18px 0 8px 0;}.babyHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}.sleepPressureBox{flex:1;max-width:190px;background:#1f1f2e;border:2px solid #555b7a;border-radius:12px;padding:7px;box-shadow:inset 0 0 10px rgba(255,255,255,.06);}.sleepPressureTop{display:flex;justify-content:space-between;align-items:center;font-size:10px;font-weight:900;color:#ffd966;letter-spacing:.5px;margin-bottom:4px;}.sleepPressureShell{height:12px;background:#080b12;border:1px solid #666;border-radius:8px;overflow:hidden;position:relative;}.sleepPressureFill{height:100%;width:0%;background:linear-gradient(90deg,#2eae55,#ffd966,#d9534f);transition:width .3s ease;}.sleepPressureText{font-size:10px;font-weight:800;color:#cfd3ff;text-align:right;margin-top:3px;}.small{font-size:13px;color:#666;margin-bottom:10px;}.highlight{font-size:15px;font-weight:700;color:#444;margin-bottom:10px;}.nextNap{font-size:15px;font-weight:800;color:#7e57c2;background:#f2ebff;border:1px solid #dfd0ff;border-radius:12px;padding:10px;margin-bottom:10px;}.sleepTypeGroup{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 12px;}.sleepTypeGroup label{background:#eee;padding:10px;border-radius:12px;text-align:center;font-weight:700;font-size:15px;}.oz-group{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}.oz-group label{background:#eee;padding:10px;border-radius:12px;text-align:center;font-weight:700;font-size:15px;}button{width:100%;padding:16px;border:none;border-radius:14px;font-size:20px;font-weight:800;color:white;margin-top:8px;}.rowanBtn{background:#5da9e9;}.julianBtn{background:#8bc34a;}.napToggleStart{background:#2eae55;}.napToggleStop{background:#d9534f;}.deleteBtn{background:#d9534f;font-size:13px;padding:8px 10px;width:auto;}.giveRemainingBtn{background:#7e57c2;font-size:14px;padding:11px;margin-top:8px;}.giveRemainingBtn.active{background:linear-gradient(90deg,#2eae55,#8bc34a);color:#08230f;}.logEntry{border-top:1px solid #eee;padding:10px 0;font-size:15px;}input[type=time],input[type=number],input[type=date],select{padding:8px;border-radius:10px;font-size:15px;margin-top:6px;border:1px solid #ccc;}.partialOzInput{width:80px;}.partialOzInput:disabled{background:#eee;color:#999;}.bottleControls{margin-top:8px;display:grid;gap:6px;}
+.statGrid{display:grid;gap:10px;}.statBox{background:#1f1f2e;color:white;border:2px solid #555b7a;border-radius:16px;padding:12px;box-shadow:0 3px 10px rgba(0,0,0,.12);}.statTitle{font-size:13px;font-weight:900;color:#ffd966;letter-spacing:.5px;margin-bottom:5px;}.statValue{font-size:18px;font-weight:900;}.statNote{font-size:12px;color:#cfd3ff;margin-top:4px;}.dayNav{background:#1f1f2e;color:white;border:2px solid #555b7a;border-radius:18px;padding:12px;margin-bottom:15px;}.dayNavTitle{font-weight:900;color:#ffd966;text-align:center;margin-bottom:8px;letter-spacing:.8px;}.dayControls{display:grid;grid-template-columns:1fr 1fr;gap:8px;}.dayControls button{font-size:15px;padding:10px;background:#44445f;}.datePickerWrap{margin-top:8px;display:flex;gap:8px;align-items:center;}.datePickerWrap input{width:100%;}.daySummary{background:#111827;border:2px solid #555b7a;border-radius:16px;padding:12px;color:white;margin-bottom:12px;}.daySummary h3{margin-top:0;color:#ffd966;}.previousLogGroup{background:#f8f8f8;border:1px solid #e5e5e5;border-radius:14px;padding:10px;margin-bottom:12px;}.previousLogGroup h3{margin-top:0;}.emptyDay{text-align:center;color:#666;font-weight:700;padding:18px;}
+
+.settingsGrid{display:grid;gap:12px;}
+.settingBox{
+background:#1f1f2e;
+color:white;
+border:2px solid #555b7a;
+border-radius:16px;
+padding:12px;
+box-shadow:0 3px 10px rgba(0,0,0,.12);
+}
+.settingTitle{
+font-size:13px;
+font-weight:900;
+color:#ffd966;
+letter-spacing:.5px;
+margin-bottom:8px;
+}
+.settingRow{
+display:grid;
+grid-template-columns:1fr 95px;
+gap:10px;
+align-items:center;
+margin:8px 0;
+font-size:14px;
+font-weight:800;
+}
+.settingRow input{
+width:100%;
+box-sizing:border-box;
+}
+.settingNote{
+font-size:12px;
+color:#cfd3ff;
+margin-top:8px;
+line-height:1.35;
+}
+.settingsSaveBtn{background:#2eae55;}
+.settingsResetBtn{background:#666;}
+
+.quickBoth{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
+.quickBoth button{margin-top:0;font-size:16px;padding:14px;}
+.feedBothBtn{background:linear-gradient(90deg,#5da9e9,#8bc34a);color:#06240f;}
+.sleepBothBtn{background:#44445f;}
+.quickHint{font-size:12px;color:#888;text-align:center;margin:0 0 12px;}
+.tabs{flex-wrap:wrap;}
+.tabBtn{flex:1 1 28%;min-width:92px;font-size:15px;padding:10px 6px;}
+.headerBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.headerBtns button{margin:0 0 8px;}
+.themeToggle{background:#333;font-size:14px;padding:10px;}
+
+.entryMeta{font-size:12px;color:#888;margin-top:2px;}
+.noteInput{width:100%;box-sizing:border-box;margin-top:6px;}
+.entryDateRow{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:6px;}
+
+.chartCard{background:#1f1f2e;color:#fff;border:2px solid #555b7a;border-radius:16px;padding:12px;margin-bottom:14px;}
+.chartTitle{font-size:14px;font-weight:900;color:#ffd966;letter-spacing:.5px;margin-bottom:10px;}
+.chartRow{display:grid;grid-template-columns:52px 1fr 66px;gap:8px;align-items:center;margin:6px 0;font-size:12px;font-weight:800;}
+.chartLabel{color:#cfd3ff;}
+.chartBarShell{height:18px;background:#080b12;border:1px solid #555b7a;border-radius:9px;overflow:hidden;display:flex;}
+.chartBarA{height:100%;background:#5da9e9;}
+.chartBarB{height:100%;background:#8bc34a;}
+.chartBarSolid{height:100%;background:linear-gradient(90deg,#7e57c2,#5da9e9);}
+.chartVal{text-align:right;color:#fff;}
+.chartLegend{font-size:11px;color:#cfd3ff;margin-top:8px;}
+.chartEmpty{color:#cfd3ff;text-align:center;padding:10px;}
+
+body.night{background:#0e1018;color:#e6e8f0;}
+body.night h1,body.night h2,body.night h3{color:#e6e8f0;}
+body.night .subtitle,body.night .small{color:#9aa0b5;}
+body.night .highlight{color:#c7cbe0;}
+body.night .status{color:#9aa0b5;}
+body.night .card{background:#191c27;box-shadow:0 3px 10px rgba(0,0,0,.4);}
+body.night .tabs,body.night .logTabs{background:#0e1018;}
+body.night .tabBtn,body.night .logTabBtn{background:#2a2e3d;color:#cfd3e6;}
+body.night .tabBtn.active,body.night .logTabBtn.active{background:#5da9e9;color:#06121f;}
+body.night .oz-group label,body.night .sleepTypeGroup label{background:#2a2e3d;color:#e6e8f0;}
+body.night .nextNap{background:#241b3a;border-color:#4a3d6b;color:#cdb8ff;}
+body.night .previousLogGroup{background:#191c27;border-color:#2a2e3d;}
+body.night .previousLogGroup h3{color:#e6e8f0;}
+body.night .logEntry{border-top-color:#2a2e3d;}
+body.night .emptyDay{color:#9aa0b5;}
+body.night input,body.night select{background:#0e1018;color:#e6e8f0;border-color:#3a3f52;}
+body.night .partialOzInput:disabled{background:#23262f;color:#666;}
+body.night .quickHint,body.night .entryMeta{color:#7e8398;}
+
+</style>
+</head>
+<body>
+<h1>Twin Tracker</h1>
+<div class="subtitle">Live shared bottle and sleep tracker</div>
+<div class="scoreboard">
+<div class="score-title">DAILY BOTTLE BATTLE</div>
+<div class="score-card"><div class="score-row"><div><div class="score-name">Rowan</div><div class="score-bottles" id="rowanBottleCount">0 bottles today</div></div><div class="score-amount" id="rowanScoreText">0 / 35 oz</div></div><div class="progress-wrap"><div class="progress-shell"><div class="progress-fill" id="rowanProgress"></div><div class="goal-tick"></div></div><div class="goal-label">25 oz</div></div><div class="score-message" id="rowanScoreMessage">Start the battle!</div></div>
+<div class="score-card"><div class="score-row"><div><div class="score-name">Julian</div><div class="score-bottles" id="julianBottleCount">0 bottles today</div></div><div class="score-amount" id="julianScoreText">0 / 35 oz</div></div><div class="progress-wrap"><div class="progress-shell"><div class="progress-fill" id="julianProgress"></div><div class="goal-tick"></div></div><div class="goal-label">25 oz</div></div><div class="score-message" id="julianScoreMessage">Start the battle!</div></div>
+<div class="daily-total"><div class="daily-total-title">TOTAL TEAM SCORE</div><div class="daily-total-line"><span>Total Bottles</span><span id="totalBottleCount">0</span></div><div class="daily-total-line"><span>Total Ounces</span><span id="totalOuncesCount">0 oz</span></div><div class="bottle-emoji-row" id="bottleEmojiRow">No bottles yet</div></div>
+<div class="parent-progress" id="parentProgressBox"><div class="parent-progress-title">PARENT LEVEL UP</div><div class="sync-row"><span>Twin Sync Status:</span><span class="sync-score inactive" id="twinSyncScore">Inactive</span></div><div class="level-row"><span id="parentLevelText">Level 1</span><span class="level-score" id="parentPointText">0 pts</span></div><div class="level-shell"><div class="level-fill" id="parentLevelFill"></div></div><div class="level-note" id="parentLevelNote">0 / 100 XP to next level</div><div class="tummy-row"><span id="tummyTimeLabel">Tummy Time</span><span class="tummy-score" id="tummyTimeScore">0m / 0 XP</span></div><button class="tummy-button" id="tummyTimeButton" onclick="toggleTummyTime()">Start Tummy Time</button></div>
+</div>
+<div class="headerBtns"><button class="refreshBtn" onclick="refreshApp()">Refresh</button><button class="themeToggle" id="themeToggleBtn" onclick="cycleTheme()">🌙 Theme: Auto</button></div>
+<div class="quickBoth"><button class="feedBothBtn" onclick="feedBoth()">🍼 Feed Both</button><button class="sleepBothBtn" id="sleepBothBtn" onclick="sleepBoth()">😴 Sleep Both</button></div>
+<div class="quickHint" id="quickHint">Feeds each twin their selected size • puts both down / wakes both</div>
+<div class="status" id="status">Connecting to Firebase...</div>
+<div class="tabs"><button class="tabBtn active" id="rowanTab" onclick="showMainTab('Rowan')">Rowan</button><button class="tabBtn" id="julianTab" onclick="showMainTab('Julian')">Julian</button><button class="tabBtn" id="trendsTab" onclick="showMainTab('Trends')">Trends</button><button class="tabBtn" id="statsTab" onclick="showMainTab('Stats')">Stats</button><button class="tabBtn" id="historyTab" onclick="showMainTab('History')">Days</button><button class="tabBtn" id="settingsTab" onclick="showMainTab('Settings')">Settings</button></div>
+<div class="card" id="rowanSection"><div class="babyHeader"><h2>Rowan</h2><div class="sleepPressureBox"><div class="sleepPressureTop"><span>SLEEP PRESSURE</span><span id="rowanSleepPressurePercent">0%</span></div><div class="sleepPressureShell"><div class="sleepPressureFill" id="rowanSleepPressureFill"></div></div><div class="sleepPressureText" id="rowanSleepPressureText">Rested</div></div></div><div class="highlight" id="rowanTimer">-- since last bottle</div><div class="small" id="rowanLast">No bottles yet</div><div class="highlight" id="rowanAwakeTime">Awake for: --</div><div class="nextNap" id="rowanNextNap">Next sleep: --</div><div class="small" id="rowanNapStatus">No active sleep</div><div class="oz-group"><label><input type="radio" name="rowanOz" value="2" checked>2oz</label><label><input type="radio" name="rowanOz" value="4">4oz</label><label><input type="radio" name="rowanOz" value="6">6oz</label><label><input type="radio" name="rowanOz" value="8">8oz</label></div><div class="sleepTypeGroup"><label><input type="radio" name="rowanSleepType" value="nap"> Nap</label><label><input type="radio" name="rowanSleepType" value="bedtime"> Bedtime</label></div><button class="rowanBtn" onclick="logFeed('Rowan')">Gave Rowan Bottle</button><button class="napToggleStart" id="rowanNapButton" onclick="toggleNap('Rowan')">Start Rowan Sleep</button><div class="logTabs"><button class="logTabBtn active" id="rowanFeedTab" onclick="showLogTab('Rowan','Feedings')">Feedings</button><button class="logTabBtn" id="rowanNapTab" onclick="showLogTab('Rowan','Sleeps')">Sleep</button></div><div id="rowanFeedPanel"><h3>Rowan Bottles</h3><div id="rowanLog"></div></div><div id="rowanNapPanel" style="display:none;"><h3>Rowan Sleep</h3><div id="rowanNapLog"></div></div></div>
+<div class="card" id="julianSection" style="display:none;"><div class="babyHeader"><h2>Julian</h2><div class="sleepPressureBox"><div class="sleepPressureTop"><span>SLEEP PRESSURE</span><span id="julianSleepPressurePercent">0%</span></div><div class="sleepPressureShell"><div class="sleepPressureFill" id="julianSleepPressureFill"></div></div><div class="sleepPressureText" id="julianSleepPressureText">Rested</div></div></div><div class="highlight" id="julianTimer">-- since last bottle</div><div class="small" id="julianLast">No bottles yet</div><div class="highlight" id="julianAwakeTime">Awake for: --</div><div class="nextNap" id="julianNextNap">Next sleep: --</div><div class="small" id="julianNapStatus">No active sleep</div><div class="oz-group"><label><input type="radio" name="julianOz" value="2" checked>2oz</label><label><input type="radio" name="julianOz" value="4">4oz</label><label><input type="radio" name="julianOz" value="6">6oz</label><label><input type="radio" name="julianOz" value="8">8oz</label></div><div class="sleepTypeGroup"><label><input type="radio" name="julianSleepType" value="nap"> Nap</label><label><input type="radio" name="julianSleepType" value="bedtime"> Bedtime</label></div><button class="julianBtn" onclick="logFeed('Julian')">Gave Julian Bottle</button><button class="napToggleStart" id="julianNapButton" onclick="toggleNap('Julian')">Start Julian Sleep</button><div class="logTabs"><button class="logTabBtn active" id="julianFeedTab" onclick="showLogTab('Julian','Feedings')">Feedings</button><button class="logTabBtn" id="julianNapTab" onclick="showLogTab('Julian','Sleeps')">Sleep</button></div><div id="julianFeedPanel"><h3>Julian Bottles</h3><div id="julianLog"></div></div><div id="julianNapPanel" style="display:none;"><h3>Julian Sleep</h3><div id="julianNapLog"></div></div></div>
+<div class="card" id="trendsSection" style="display:none;"><h2>Trends</h2><div class="subtitle">Daily totals over the last 14 days.</div><div id="trendsContent"></div></div>
+<div class="card" id="statsSection" style="display:none;"><h2>Statistics</h2><div class="subtitle">Fun stats pulled from today’s logs and full history</div><div class="statGrid" id="statsGrid"></div></div>
+<div class="card" id="historySection" style="display:none;"><h2>Previous Days</h2><div class="subtitle">Jump back and review bottles, sleep, and stats for any day.</div><div class="dayNav"><div class="dayNavTitle" id="historyDateTitle">Selected Day</div><div class="dayControls"><button onclick="changeHistoryDay(-1)">← Previous Day</button><button onclick="changeHistoryDay(1)">Next Day →</button></div><div class="datePickerWrap"><input type="date" id="historyDatePicker" onchange="setHistoryDateFromPicker()"></div></div><div id="historyContent"></div></div>
+
+<div class="card" id="settingsSection" style="display:none;">
+<h2>Settings</h2>
+<div class="subtitle">Adjust wake windows, alerts, and formula cost.</div>
+
+<div class="settingsGrid">
+
+<div class="settingBox">
+<div class="settingTitle">THIS DEVICE</div>
+<div class="settingRow">
+<label for="loggedByName">Who is using this phone?</label>
+<input type="text" id="loggedByName" placeholder="e.g. Mom" maxlength="20">
+</div>
+<div class="settingNote">New bottles and sleeps logged on this device get tagged with this name, so you can both see who logged what. Saved on this phone only.</div>
+</div>
+
+<div class="settingBox">
+<div class="settingTitle">NOTIFICATIONS</div>
+<div class="settingNote" id="notifStatus">Checking notification support…</div>
+<button class="settingsSaveBtn" id="enableNotifBtn" onclick="enableNotifications()">Enable Notifications</button>
+<div class="settingNote">On iPhone, first add Twin Tracker to your Home Screen (Share → Add to Home Screen) and open it from there — only then can notifications be enabled. Background alerts (tired baby, next feed) arrive in a later update.</div>
+</div>
+
+<div class="settingBox">
+<div class="settingTitle">SLEEP PRESSURE / WAKE WINDOW</div>
+<div class="settingRow">
+<label for="wakeWindowStartHours">80% sleep pressure at</label>
+<input type="number" id="wakeWindowStartHours" step="0.25" min="0.25">
+</div>
+<div class="settingRow">
+<label for="wakeWindowFullHours">100% sleep pressure at</label>
+<input type="number" id="wakeWindowFullHours" step="0.25" min="0.5">
+</div>
+<div class="settingNote">Default: 2 hours = 80%, 3 hours = 100%. Sleep pressure also drops while sleeping based on the 100% window.</div>
+</div>
+
+<div class="settingBox">
+<div class="settingTitle">WARNINGS</div>
+<div class="settingRow">
+<label for="tiredWarningHours">Tired baby warning after awake</label>
+<input type="number" id="tiredWarningHours" step="0.25" min="0.25">
+</div>
+<div class="settingRow">
+<label for="sleepyWarningHours">Sleepyhead warning after nap</label>
+<input type="number" id="sleepyWarningHours" step="0.25" min="0.25">
+</div>
+<div class="settingNote">Default: tired warning at 3 hours awake, sleepyhead warning at 2 hours of nap sleep. Bedtime sleeps do not trigger sleepyhead warnings.</div>
+</div>
+
+<div class="settingBox">
+<div class="settingTitle">FORMULA COST</div>
+<div class="settingRow">
+<label for="formulaPricePerGram">Price per gram of powder</label>
+<input type="number" id="formulaPricePerGram" step="0.0001" min="0" oninput="updateFormulaCostPreview()">
+</div>
+<div class="settingNote" id="formulaPreparedOzCostText">Calculated price per prepared fl oz: --</div>
+<div class="settingNote">Default is based on $52.99 per 777g container. Formula ratio: 2 prepared fl oz = 9g powder.</div>
+</div>
+
+<button class="settingsSaveBtn" onclick="saveSettingsFromForm()">Save Settings</button>
+<button class="settingsResetBtn" onclick="resetSettings()">Reset Defaults</button>
+
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {apiKey:"AIzaSyBfeIYcl4QDymvqfN8n7r8nhc72sbJP9y8",authDomain:"twin-feeding-log-tracker.firebaseapp.com",projectId:"twin-feeding-log-tracker",storageBucket:"twin-feeding-log-tracker.firebasestorage.app",messagingSenderId:"508696251735",appId:"1:508696251735:web:bcf62a17e968a0c628c212"};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const feedsRef = collection(db,"feedingLogs");
+const napsRef = collection(db,"napLogs");
+const GRAMS_PER_2OZ_BOTTLE=9, GRAMS_PER_PREPARED_OZ=4.5, CONTAINER_GRAMS=777, CONTAINER_POWDER_OZ=27.4, DEFAULT_CONTAINER_COST=52.99, DEFAULT_FORMULA_PRICE_PER_GRAM=DEFAULT_CONTAINER_COST/CONTAINER_GRAMS, GRAMS_PER_POWDER_OZ=CONTAINER_GRAMS/CONTAINER_POWDER_OZ;
+const TUMMY_TIME_XP_PER_MINUTE=20;
+let feeds=[], naps=[];
+let selectedHistoryDateKey = localDateKey(new Date().toISOString());
+let alertHistory={Rowan:{awake:false,nap:false},Julian:{awake:false,nap:false}};
+let appSettings={
+wakeWindowStartHours:2,
+wakeWindowFullHours:3,
+tiredWarningHours:3,
+sleepyWarningHours:2,
+formulaPricePerGram:DEFAULT_FORMULA_PRICE_PER_GRAM
+};
+let tummyTimeState=loadTummyTimeState();
+let themeMode=localStorage.getItem("twinTrackerTheme")||"auto";
+let loggedByName=localStorage.getItem("twinTrackerLoggedBy")||"";
+
+function applyTheme(){
+let night=themeMode==="dark"||(themeMode==="auto"&&isBedtimeHours(new Date()));
+document.body.classList.toggle("night",night);
+let btn=document.getElementById("themeToggleBtn");
+if(btn){
+let label=themeMode==="auto"?"Auto":themeMode==="dark"?"Dark":"Light";
+btn.innerHTML=(night?"🌙":"☀️")+" Theme: "+label;
+}
+}
+function cycleTheme(){
+themeMode=themeMode==="auto"?"light":themeMode==="light"?"dark":"auto";
+localStorage.setItem("twinTrackerTheme",themeMode);
+applyTheme();
+}
+
+function isStandalone(){return (window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;}
+function updateNotifStatus(){
+let el=document.getElementById("notifStatus"),btn=document.getElementById("enableNotifBtn");
+if(!el)return;
+if(!("Notification" in window)){el.innerHTML="Notifications aren’t supported in this browser.";if(btn)btn.disabled=true;return;}
+let perm=Notification.permission;
+if(perm==="granted"){el.innerHTML="✓ Notifications are enabled on this device.";if(btn)btn.innerHTML="Send Test Notification";}
+else if(perm==="denied"){el.innerHTML="Notifications are blocked. Re-enable them for Twin Tracker in your device settings.";if(btn)btn.innerHTML="Enable Notifications";}
+else{el.innerHTML=isStandalone()?"Tap below to allow notifications on this device.":"Add Twin Tracker to your Home Screen and open it from there, then enable notifications.";if(btn)btn.innerHTML="Enable Notifications";}
+}
+async function enableNotifications(){
+if(!("Notification" in window)){alert("This browser doesn’t support notifications.");return;}
+try{
+let perm=await Notification.requestPermission();
+if(perm==="granted"){
+if("serviceWorker" in navigator){let reg=await navigator.serviceWorker.ready;reg.showNotification("Twin Tracker",{body:"Notifications are on. 🍼",icon:"https://i.ibb.co/Zzcnht8k/E47-ECDA6-E87-B-42-D2-92-E0-A4-C072-D94864.png"});}
+}else if(perm==="denied"){alert("Notifications are blocked. You can re-enable them in your device settings.");}
+}catch(e){alert("Could not enable notifications: "+e.message);}
+updateNotifStatus();
+}
+
+function loadSettings(){
+let saved=localStorage.getItem("twinTrackerSettings");
+if(saved){
+try{
+let parsed=JSON.parse(saved);
+appSettings={...appSettings,...parsed};
+}catch(e){}
+}
+validateSettings();
+}
+
+function validateSettings(){
+appSettings.wakeWindowStartHours=Number(appSettings.wakeWindowStartHours)||2;
+appSettings.wakeWindowFullHours=Number(appSettings.wakeWindowFullHours)||3;
+appSettings.tiredWarningHours=Number(appSettings.tiredWarningHours)||3;
+appSettings.sleepyWarningHours=Number(appSettings.sleepyWarningHours)||2;
+appSettings.formulaPricePerGram=Number(appSettings.formulaPricePerGram)||DEFAULT_FORMULA_PRICE_PER_GRAM;
+
+if(appSettings.wakeWindowStartHours<0.25)appSettings.wakeWindowStartHours=0.25;
+if(appSettings.wakeWindowFullHours<=appSettings.wakeWindowStartHours){
+appSettings.wakeWindowFullHours=appSettings.wakeWindowStartHours+0.25;
+}
+if(appSettings.tiredWarningHours<0.25)appSettings.tiredWarningHours=0.25;
+if(appSettings.sleepyWarningHours<0.25)appSettings.sleepyWarningHours=0.25;
+if(appSettings.formulaPricePerGram<0)appSettings.formulaPricePerGram=DEFAULT_FORMULA_PRICE_PER_GRAM;
+}
+
+function saveSettings(){
+validateSettings();
+localStorage.setItem("twinTrackerSettings",JSON.stringify(appSettings));
+renderSettings();
+render();
+checkAlerts();
+}
+
+function loadTummyTimeState(){
+let saved=localStorage.getItem("twinTrackerTummyTime");
+let state={completedMinutes:0,activeStart:""};
+if(saved){
+try{
+state={...state,...JSON.parse(saved)};
+}catch(e){}
+}
+state.completedMinutes=Math.max(0,Math.floor(Number(state.completedMinutes)||0));
+if(state.activeStart&&isNaN(new Date(state.activeStart).getTime()))state.activeStart="";
+return state;
+}
+
+function saveTummyTimeState(){
+localStorage.setItem("twinTrackerTummyTime",JSON.stringify(tummyTimeState));
+}
+
+function isTummyTimeActive(){
+return !!tummyTimeState.activeStart;
+}
+
+function getActiveTummyMinutes(){
+if(!isTummyTimeActive())return 0;
+return Math.max(0,Math.floor((Date.now()-new Date(tummyTimeState.activeStart).getTime())/60000));
+}
+
+function getTotalTummyMinutes(){
+return tummyTimeState.completedMinutes+getActiveTummyMinutes();
+}
+
+function getTummyTimePoints(){
+return getTotalTummyMinutes()*TUMMY_TIME_XP_PER_MINUTE;
+}
+
+function toggleTummyTime(){
+if(isTummyTimeActive()){
+tummyTimeState.completedMinutes+=getActiveTummyMinutes();
+tummyTimeState.activeStart="";
+}else{
+tummyTimeState.activeStart=new Date().toISOString();
+}
+saveTummyTimeState();
+render();
+}
+
+function renderSettings(){
+let wakeStart=document.getElementById("wakeWindowStartHours");
+let wakeFull=document.getElementById("wakeWindowFullHours");
+let tired=document.getElementById("tiredWarningHours");
+let sleepy=document.getElementById("sleepyWarningHours");
+let price=document.getElementById("formulaPricePerGram");
+
+if(!wakeStart||!wakeFull||!tired||!sleepy||!price)return;
+
+wakeStart.value=appSettings.wakeWindowStartHours;
+wakeFull.value=appSettings.wakeWindowFullHours;
+tired.value=appSettings.tiredWarningHours;
+sleepy.value=appSettings.sleepyWarningHours;
+price.value=Number(appSettings.formulaPricePerGram).toFixed(4);
+
+let nameInput=document.getElementById("loggedByName");
+if(nameInput)nameInput.value=loggedByName;
+
+updateFormulaCostPreview();
+updateNotifStatus();
+}
+
+function updateFormulaCostPreview(){
+let priceInput=document.getElementById("formulaPricePerGram");
+let text=document.getElementById("formulaPreparedOzCostText");
+if(!priceInput||!text)return;
+
+let pricePerGram=Number(priceInput.value);
+if(isNaN(pricePerGram)||pricePerGram<0)pricePerGram=DEFAULT_FORMULA_PRICE_PER_GRAM;
+
+let preparedOzCost=pricePerGram*GRAMS_PER_PREPARED_OZ;
+let containerCost=pricePerGram*CONTAINER_GRAMS;
+
+text.innerHTML="Calculated price per prepared fl oz: "+formatMoney(preparedOzCost)+" • Container equivalent: "+formatMoney(containerCost);
+}
+
+function saveSettingsFromForm(){
+appSettings.wakeWindowStartHours=Number(document.getElementById("wakeWindowStartHours").value);
+appSettings.wakeWindowFullHours=Number(document.getElementById("wakeWindowFullHours").value);
+appSettings.tiredWarningHours=Number(document.getElementById("tiredWarningHours").value);
+appSettings.sleepyWarningHours=Number(document.getElementById("sleepyWarningHours").value);
+appSettings.formulaPricePerGram=Number(document.getElementById("formulaPricePerGram").value);
+let nameInput=document.getElementById("loggedByName");
+if(nameInput){loggedByName=nameInput.value.trim().slice(0,20);localStorage.setItem("twinTrackerLoggedBy",loggedByName);}
+saveSettings();
+alert("Settings saved!");
+}
+
+function resetSettings(){
+if(!confirm("Reset settings to defaults?"))return;
+localStorage.removeItem("twinTrackerSettings");
+appSettings={
+wakeWindowStartHours:2,
+wakeWindowFullHours:3,
+tiredWarningHours:3,
+sleepyWarningHours:2,
+formulaPricePerGram:DEFAULT_FORMULA_PRICE_PER_GRAM
+};
+saveSettings();
+}
+
+function isBedtimeHours(dateInput=new Date()){let h=new Date(dateInput).getHours();return h>=21||h<7;}
+function isSleepyheadQuietHours(){return isBedtimeHours(new Date());}
+function inferSleepType(startTime){return isBedtimeHours(startTime)?"bedtime":"nap";}
+function prettySleepType(type){return type==="bedtime"?"Bedtime":"Nap";}
+function getSleepType(item){return item.sleepType || item.napType || inferSleepType(item.startTime);}
+function getSelectedSleepType(name){let radio=document.querySelector('input[name="'+name.toLowerCase()+'SleepType"]:checked');return radio?radio.value:inferSleepType(new Date());}
+function setDefaultSleepTypeRadios(){["Rowan","Julian"].forEach(name=>{let already=document.querySelector('input[name="'+name.toLowerCase()+'SleepType"]:checked');if(already)return;let type=inferSleepType(new Date());let radio=document.querySelector('input[name="'+name.toLowerCase()+'SleepType"][value="'+type+'"]');if(radio)radio.checked=true;});}
+let currentMainTab="Rowan";
+function showMainTab(name){currentMainTab=name;let sections={Rowan:"rowanSection",Julian:"julianSection",Trends:"trendsSection",Stats:"statsSection",History:"historySection",Settings:"settingsSection"};let tabs={Rowan:"rowanTab",Julian:"julianTab",Trends:"trendsTab",Stats:"statsTab",History:"historyTab",Settings:"settingsTab"};Object.keys(sections).forEach(k=>{let s=document.getElementById(sections[k]);if(s)s.style.display="none";let t=document.getElementById(tabs[k]);if(t)t.classList.remove("active");});let sec=document.getElementById(sections[name]),tab=document.getElementById(tabs[name]);if(sec)sec.style.display="block";if(tab)tab.classList.add("active");if(name==="Trends")renderTrends();if(name==="Stats")renderStats();if(name==="History")renderHistory();if(name==="Settings")renderSettings();window.scrollTo({top:0,behavior:"smooth"});}
+function showBaby(name){showMainTab(name);}
+function showLogTab(name,type){let lower=name.toLowerCase();let feedPanel=document.getElementById(lower+"FeedPanel"),napPanel=document.getElementById(lower+"NapPanel"),feedTab=document.getElementById(lower+"FeedTab"),napTab=document.getElementById(lower+"NapTab");if(type==="Feedings"){feedPanel.style.display="block";napPanel.style.display="none";feedTab.classList.add("active");napTab.classList.remove("active");}else{feedPanel.style.display="none";napPanel.style.display="block";napTab.classList.add("active");feedTab.classList.remove("active");}}
+function refreshApp(){safeRender();document.getElementById("status").innerText="Refreshed";setTimeout(()=>{document.getElementById("status").innerText="Live sync active";},1000);}
+function getOz(name){let radio=document.querySelector('input[name="'+name.toLowerCase()+'Oz"]:checked');return radio?radio.value:"2";}
+let feedInFlight={Rowan:false,Julian:false};
+async function logFeed(name){if(feedInFlight[name])return;feedInFlight[name]=true;try{let bottleOz=Number(getOz(name));await addDoc(feedsRef,{baby:name,oz:bottleOz,finishStatus:"",consumedOz:0,time:new Date().toISOString(),loggedBy:loggedByName||""});}catch(error){alert("Could not log bottle: "+error.message);}finally{setTimeout(()=>{feedInFlight[name]=false;},1500);}}
+async function feedBoth(){await logFeed("Rowan");await logFeed("Julian");}
+async function sleepBoth(){try{let anyActive=getActiveNap("Rowan")||getActiveNap("Julian");if(anyActive){if(getActiveNap("Rowan"))await endNap("Rowan");if(getActiveNap("Julian"))await endNap("Julian");}else{await startNap("Rowan");await startNap("Julian");}}catch(error){alert("Sleep Both error: "+error.message);}}
+async function toggleNap(name){let active=naps.find(x=>x.baby===name&&!x.endTime);if(active){await endNap(name);}else{await startNap(name);}}
+async function startNap(name){try{let active=naps.find(x=>x.baby===name&&!x.endTime);if(active){alert(name+" already has an active sleep session.");return;}let now=new Date();await addDoc(napsRef,{baby:name,startTime:now.toISOString(),endTime:"",sleepType:getSelectedSleepType(name),loggedBy:loggedByName||""});alertHistory[name].awake=false;alertHistory[name].nap=false;}catch(error){alert("Start sleep error: "+error.message);}}
+async function endNap(name){try{let active=naps.find(x=>x.baby===name&&!x.endTime);if(!active){alert("No active sleep session for "+name+".");return;}await updateDoc(doc(db,"napLogs",active.id),{endTime:new Date().toISOString(),sleepType:getSleepType(active)});alertHistory[name].awake=false;alertHistory[name].nap=false;}catch(error){alert("End sleep error: "+error.message);}}
+function since(time){let mins=Math.floor((Date.now()-new Date(time))/60000),h=Math.floor(mins/60),m=mins%60;return h>0?h+"h "+m+"m":m+"m";}
+function minutesSince(time){return Math.floor((Date.now()-new Date(time))/60000);}
+function duration(start,end){if(!end)return since(start);let mins=Math.floor((new Date(end)-new Date(start))/60000),h=Math.floor(mins/60),m=mins%60;return h>0?h+"h "+m+"m":m+"m";}
+function minutesDuration(start,end){if(!end)return 0;return Math.max(0,Math.floor((new Date(end)-new Date(start))/60000));}
+function clock(time){if(!time)return"";return new Date(time).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
+function fullDateLabel(dateKey){let d=new Date(dateKey+"T12:00:00");return d.toLocaleDateString([],{weekday:"long",month:"long",day:"numeric",year:"numeric"});}
+function nextNapClock(time){if(!time)return"";let d=new Date(time);d.setHours(d.getHours()+2);return clock(d.toISOString());}
+function addMinutesClock(time,mins){if(!time)return"";let d=new Date(time);d.setMinutes(d.getMinutes()+mins);return clock(d.toISOString());}
+function getAvgWakeWindowMinutes(name){let sleeps=naps.filter(x=>x.baby===name&&x.endTime).sort((a,b)=>new Date(a.startTime)-new Date(b.startTime));let gaps=[];for(let i=1;i<sleeps.length;i++){let gap=Math.floor((new Date(sleeps[i].startTime)-new Date(sleeps[i-1].endTime))/60000);if(gap>0&&gap<=360)gaps.push(gap);}if(gaps.length<3)return null;let recent=gaps.slice(-12);return Math.round(recent.reduce((a,b)=>a+b,0)/recent.length);}
+function predictedNextSleepText(name,lastNap){let avg=getAvgWakeWindowMinutes(name);let win=avg||Math.round(appSettings.wakeWindowFullHours*60);let predicted=addMinutesClock(lastNap.endTime,win);return "Next sleep around "+predicted+(avg?" (avg wake window "+formatMinutes(win)+")":" (~"+formatMinutes(win)+" window)");}
+function timeValue(iso){if(!iso)return"";let d=new Date(iso),h=String(d.getHours()).padStart(2,'0'),m=String(d.getMinutes()).padStart(2,'0');return h+":"+m;}
+function localDateKey(time){let d=new Date(time),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;}
+function isToday(time){return localDateKey(time)===localDateKey(new Date().toISOString());}
+function getFinishStatus(item){if(item.finishStatus)return item.finishStatus;if(item.finished===true||item.finished==="Yes"||item.finished==="All of it")return"Yes";if(item.finished===false||item.finished==="No"||item.finished==="None")return"No";if(typeof item.consumedOz==="number"&&item.consumedOz>0&&item.consumedOz<Number(item.oz))return"Partial";return"";}
+function getConsumedOz(item){let bottleOz=Number(item.oz)||0,status=getFinishStatus(item);if(status==="Yes")return bottleOz;if(status==="No")return 0;if(status==="Partial"){let consumed=Number(item.consumedOz)||0;if(consumed<0)consumed=0;if(consumed>bottleOz)consumed=bottleOz;return consumed;}if(typeof item.consumedOz==="number")return item.consumedOz;return 0;}
+function getPreparedOz(item){return Number(item.oz)||0;}
+function getOtherBaby(name){return name==="Rowan"?"Julian":"Rowan";}
+function getRemainingGivenOz(item){if(!item.gaveRemainingTo)return 0;return Math.max(0,getPreparedOz(item)-getConsumedOz(item));}
+function getConsumedOzForBaby(item,name){let total=0;if(item.baby===name)total+=getConsumedOz(item);if(item.gaveRemainingTo===name)total+=getRemainingGivenOz(item);return total;}
+function getWastedPreparedOz(item){return Math.max(0,getPreparedOz(item)-getConsumedOz(item)-getRemainingGivenOz(item));}
+function preparedOzToPowderGrams(preparedOz){return preparedOz*GRAMS_PER_PREPARED_OZ;}
+function powderGramsToPowderOz(grams){return grams/GRAMS_PER_POWDER_OZ;}
+function powderGramsToDollars(grams){return grams*appSettings.formulaPricePerGram;}
+function formatMoney(value){return "$"+value.toFixed(2);}
+function formatOz(value){return Math.round(value*10)/10;}
+function getDailyFeeds(name){return feeds.filter(item=>item.baby===name&&isToday(item.time));}
+function getFeedsForDate(name,dateKey){return feeds.filter(item=>item.baby===name&&localDateKey(item.time)===dateKey);}
+function getAllFeedsForDate(dateKey){return feeds.filter(item=>localDateKey(item.time)===dateKey);}
+function getNapsForDate(name,dateKey){return naps.filter(item=>item.baby===name&&localDateKey(item.startTime)===dateKey);}
+function getAllNapsForDate(dateKey){return naps.filter(item=>localDateKey(item.startTime)===dateKey);}
+function getDailyBottleCount(name){return getDailyFeeds(name).length;}
+function getDailyOunces(name){let total=0;feeds.forEach(item=>{if(isToday(item.time))total+=getConsumedOzForBaby(item,name);});return Math.round(total*10)/10;}
+function getTotalDailyBottleCount(){return getDailyBottleCount("Rowan")+getDailyBottleCount("Julian");}
+function getTotalDailyOunces(){return Math.round((getDailyOunces("Rowan")+getDailyOunces("Julian"))*10)/10;}
+function bottleWord(count){return count===1?"bottle":"bottles";}
+function containerWord(count){return count===1?"container":"containers";}
+function getBottleEmojiString(count){if(count<=0)return"No bottles yet";let text="";for(let i=0;i<count;i++)text+="🍼";return text;}
+function getScoreMessage(total){if(total>=35)return"GREAT!";if(total>=25)return"GOOD!";if(total>=20)return"GETTING CLOSE!";if(total>0)return"KEEP GOING!";return"START THE BATTLE!";}
+
+function isBabySleepingAt(name,when){
+let t=when.getTime();
+return naps.some(n=>{
+if(n.baby!==name)return false;
+let start=new Date(n.startTime).getTime();
+let end=n.endTime?new Date(n.endTime).getTime():Date.now();
+return t>=start && t<end;
+});
+}
+function getDateKeysWithLogs(){
+let keys={};
+feeds.forEach(item=>{keys[localDateKey(item.time)]=true;});
+naps.forEach(item=>{
+keys[localDateKey(item.startTime)]=true;
+if(item.endTime)keys[localDateKey(item.endTime)]=true;
+});
+return Object.keys(keys).sort();
+}
+
+let syncScoreCache={};
+function getTwinSyncScoreForDate(dateKey){
+let todayKey=localDateKey(new Date().toISOString());
+if(dateKey!==todayKey && syncScoreCache[dateKey]!==undefined)return syncScoreCache[dateKey];
+let start=new Date(dateKey+"T00:00:00");
+let end=new Date(dateKey+"T23:59:00");
+let now=new Date();
+
+if(todayKey===dateKey){
+end=now;
+}
+
+let score=0;
+
+for(let t=new Date(start);t<=end;t.setMinutes(t.getMinutes()+1)){
+let rowanSleeping=isBabySleepingAt("Rowan",t);
+let julianSleeping=isBabySleepingAt("Julian",t);
+
+if(!rowanSleeping && !julianSleeping){
+score+=1;
+}else if(rowanSleeping!==julianSleeping){
+score-=1;
+}
+}
+
+if(dateKey!==todayKey)syncScoreCache[dateKey]=score;
+return score;
+}
+
+function getTwinSyncScoreToday(){
+return getTwinSyncScoreForDate(localDateKey(new Date().toISOString()));
+}
+
+function getTwinSyncActive(){
+return !!getActiveNap("Rowan") === !!getActiveNap("Julian");
+}
+
+function getTwinSyncScoreAllTime(){
+let keys=getDateKeysWithLogs();
+let total=0;
+
+keys.forEach(day=>{
+total += getTwinSyncScoreForDate(day);
+});
+
+return total;
+}
+
+function getAllTimeConsumedOunces(){
+let total=0;
+
+feeds.forEach(item=>{
+total += getConsumedOz(item)+getRemainingGivenOz(item);
+});
+
+return Math.round(total*10)/10;
+}
+
+function getXPRequirementForLevel(level){
+return Math.round(100*Math.pow(1.5,level-1));
+}
+
+function calculateParentLevel(totalXP){
+let level=1;
+let remainingXP=Math.max(0,Math.round(totalXP));
+let xpNeeded=getXPRequirementForLevel(level);
+
+while(remainingXP>=xpNeeded){
+remainingXP-=xpNeeded;
+level++;
+xpNeeded=getXPRequirementForLevel(level);
+}
+
+let progress=xpNeeded>0 ? Math.min((remainingXP/xpNeeded)*100,100) : 0;
+
+return {
+level:level,
+currentXP:remainingXP,
+xpNeeded:xpNeeded,
+progress:progress
+};
+}
+
+function getParentLevelStats(){
+let todaySyncScore=getTwinSyncScoreToday();
+let allTimeSyncScore=getTwinSyncScoreAllTime();
+let allTimeOunces=getAllTimeConsumedOunces();
+let ouncePoints=Math.round(allTimeOunces*10);
+let tummyTimeMinutes=getTotalTummyMinutes();
+let tummyTimePoints=getTummyTimePoints();
+let totalPoints=Math.max(0,ouncePoints+allTimeSyncScore+tummyTimePoints);
+let levelData=calculateParentLevel(totalPoints);
+
+return {
+todaySyncScore:todaySyncScore,
+allTimeSyncScore:allTimeSyncScore,
+twinSyncActive:getTwinSyncActive(),
+ouncePoints:ouncePoints,
+tummyTimeMinutes:tummyTimeMinutes,
+tummyTimePoints:tummyTimePoints,
+tummyTimeActive:isTummyTimeActive(),
+allTimeOunces:allTimeOunces,
+totalPoints:totalPoints,
+level:levelData.level,
+currentXP:levelData.currentXP,
+xpNeeded:levelData.xpNeeded,
+progress:levelData.progress
+};
+}
+
+function renderParentProgress(){
+let stats=getParentLevelStats();
+let sync=document.getElementById("twinSyncScore");
+let levelText=document.getElementById("parentLevelText");
+let pointText=document.getElementById("parentPointText");
+let fill=document.getElementById("parentLevelFill");
+let note=document.getElementById("parentLevelNote");
+let box=document.getElementById("parentProgressBox");
+let tummyScore=document.getElementById("tummyTimeScore");
+let tummyLabel=document.getElementById("tummyTimeLabel");
+let tummyButton=document.getElementById("tummyTimeButton");
+if(!sync||!levelText||!pointText||!fill||!note)return;
+
+sync.innerHTML=stats.twinSyncActive?"Active":"Inactive";
+sync.classList.toggle("active",stats.twinSyncActive);
+sync.classList.toggle("inactive",!stats.twinSyncActive);
+levelText.innerHTML="Parent Level "+stats.level;
+pointText.innerHTML=stats.totalPoints+" XP";
+fill.style.width=stats.progress+"%";
+note.innerHTML=stats.currentXP+" / "+stats.xpNeeded+" XP to Level "+(stats.level+1)+" | "+stats.ouncePoints+" milk XP | "+stats.tummyTimePoints+" tummy XP";
+if(box)box.classList.toggle("power-up",stats.tummyTimeActive);
+if(tummyScore)tummyScore.innerHTML=stats.tummyTimeMinutes+"m / "+stats.tummyTimePoints+" XP";
+if(tummyLabel)tummyLabel.innerHTML=stats.tummyTimeActive?"Tummy Time Active":"Tummy Time";
+if(tummyButton){
+tummyButton.innerHTML=stats.tummyTimeActive?"Stop Tummy Time":"Start Tummy Time";
+tummyButton.classList.toggle("active",stats.tummyTimeActive);
+}
+}
+function renderScoreboard(){renderBabyScore("Rowan");renderBabyScore("Julian");renderTotalScore();renderParentProgress();}
+function renderBabyScore(name){let lower=name.toLowerCase(),total=getDailyOunces(name),bottleCount=getDailyBottleCount(name),percent=Math.min((total/35)*100,100);document.getElementById(lower+"ScoreText").innerHTML=total+" / 35 oz";document.getElementById(lower+"BottleCount").innerHTML=bottleCount+" "+bottleWord(bottleCount)+" today";document.getElementById(lower+"Progress").style.width=percent+"%";document.getElementById(lower+"ScoreMessage").innerHTML=getScoreMessage(total);}
+function renderTotalScore(){let totalBottles=getTotalDailyBottleCount(),totalOunces=getTotalDailyOunces();document.getElementById("totalBottleCount").innerHTML=totalBottles+" "+bottleWord(totalBottles);document.getElementById("totalOuncesCount").innerHTML=totalOunces+" oz";document.getElementById("bottleEmojiRow").innerHTML=getBottleEmojiString(totalBottles);}
+function updateNapButton(name){let lower=name.toLowerCase(),button=document.getElementById(lower+"NapButton"),active=naps.find(x=>x.baby===name&&!x.endTime);if(!button)return;if(active){button.innerText="End "+name+" Sleep";button.classList.remove("napToggleStart");button.classList.add("napToggleStop");}else{button.innerText="Start "+name+" Sleep";button.classList.remove("napToggleStop");button.classList.add("napToggleStart");}}
+function getPreviousCompletedSleepBefore(name,beforeTime){let before=new Date(beforeTime).getTime();return naps.filter(x=>x.baby===name&&x.endTime&&new Date(x.endTime).getTime()<=before).sort((a,b)=>new Date(b.endTime)-new Date(a.endTime))[0];}
+function sleepPressureFromAwakeMinutes(awakeMinutes){
+let startMinutes=appSettings.wakeWindowStartHours*60;
+let fullMinutes=appSettings.wakeWindowFullHours*60;
+
+if(awakeMinutes<=0)return 0;
+
+if(awakeMinutes<=startMinutes){
+return Math.min((awakeMinutes/startMinutes)*80,80);
+}
+
+let remainingWindow=fullMinutes-startMinutes;
+if(remainingWindow<=0)return 100;
+
+return Math.min(80+((awakeMinutes-startMinutes)/remainingWindow)*20,100);
+}
+
+function calculateSleepPressurePercent(name){
+let active=getActiveNap(name);
+
+if(active){
+let prev=getPreviousCompletedSleepBefore(name,active.startTime);
+let startPressure=prev?sleepPressureFromAwakeMinutes(minutesDuration(prev.endTime,active.startTime)):0;
+let sleepDrop=Math.min((minutesSince(active.startTime)/(appSettings.wakeWindowFullHours*60))*100,100);
+return Math.max(0,startPressure-sleepDrop);
+}
+
+let last=getLastCompletedNap(name);
+if(!last)return 0;
+
+return sleepPressureFromAwakeMinutes(minutesSince(last.endTime));
+}
+
+function updateSleepPressure(name){let lower=name.toLowerCase(),fill=document.getElementById(lower+"SleepPressureFill"),percentText=document.getElementById(lower+"SleepPressurePercent"),label=document.getElementById(lower+"SleepPressureText"),activeNap=getActiveNap(name);if(!fill||!percentText||!label)return;let rounded=Math.round(calculateSleepPressurePercent(name));fill.style.width=rounded+"%";percentText.innerHTML=rounded+"%";if(activeNap){label.innerHTML=rounded<=0?"Recovering":"Decreasing";}else if(rounded<50){label.innerHTML="Low";}else if(rounded<80){label.innerHTML="Building";}else if(rounded<100){label.innerHTML="High";}else{label.innerHTML="FULL";}}
+async function updateFinishStatus(id,status){let item=feeds.find(x=>x.id===id);if(!item)return;let bottleOz=Number(item.oz)||0,consumedOz=0;if(status==="Yes")consumedOz=bottleOz;if(status==="No")consumedOz=0;if(status==="Partial"){consumedOz=Number(item.consumedOz)||0;if(consumedOz<=0||consumedOz>bottleOz)consumedOz="";}await updateDoc(doc(db,"feedingLogs",id),{finishStatus:status,consumedOz:consumedOz});}
+async function updateConsumedOz(id,value){let item=feeds.find(x=>x.id===id);if(!item)return;let bottleOz=Number(item.oz)||0,amount=parseFloat(value);if(isNaN(amount))amount=0;if(amount<0)amount=0;if(amount>bottleOz)amount=bottleOz;await updateDoc(doc(db,"feedingLogs",id),{finishStatus:"Partial",consumedOz:amount});}
+async function toggleGaveRemaining(id){let item=feeds.find(x=>x.id===id);if(!item)return;let other=getOtherBaby(item.baby);let newVal=item.gaveRemainingTo?"":other;try{await updateDoc(doc(db,"feedingLogs",id),{gaveRemainingTo:newVal});}catch(error){alert("Could not update shared milk: "+error.message);}}
+async function updateFeedTime(id,val){let item=feeds.find(x=>x.id===id);if(!item)return;let old=new Date(item.time),parts=val.split(":");old.setHours(parts[0]);old.setMinutes(parts[1]);old.setSeconds(0);await updateDoc(doc(db,"feedingLogs",id),{time:old.toISOString()});}
+async function updateNapTime(id,field,val){let item=naps.find(x=>x.id===id);if(!item)return;let base=new Date(field==="startTime"?item.startTime:item.endTime||item.startTime),parts=val.split(":");base.setHours(parts[0]);base.setMinutes(parts[1]);base.setSeconds(0);let update={};update[field]=base.toISOString();if(field==="startTime")update.sleepType=inferSleepType(base);await updateDoc(doc(db,"napLogs",id),update);alertHistory[item.baby].awake=false;alertHistory[item.baby].nap=false;}
+async function updateSleepType(id,val){await updateDoc(doc(db,"napLogs",id),{sleepType:val});}
+function setDatePart(iso,dateStr){let d=iso?new Date(iso):new Date();let p=dateStr.split("-");d.setFullYear(Number(p[0]),Number(p[1])-1,Number(p[2]));return d.toISOString();}
+async function updateFeedDate(id,val){if(!val)return;let item=feeds.find(x=>x.id===id);if(!item)return;await updateDoc(doc(db,"feedingLogs",id),{time:setDatePart(item.time,val)});}
+async function updateNapDate(id,field,val){if(!val)return;let item=naps.find(x=>x.id===id);if(!item)return;let cur=field==="startTime"?item.startTime:item.endTime;if(!cur)return;let update={};update[field]=setDatePart(cur,val);await updateDoc(doc(db,"napLogs",id),update);}
+async function updateFeedNote(id,val){await updateDoc(doc(db,"feedingLogs",id),{note:(val||"").slice(0,200)});}
+async function updateNapNote(id,val){await updateDoc(doc(db,"napLogs",id),{note:(val||"").slice(0,200)});}
+function byLine(item){return item.loggedBy?"Logged by "+item.loggedBy:"";}
+async function deleteFeed(id){if(!confirm("Delete this bottle entry?"))return;await deleteDoc(doc(db,"feedingLogs",id));}
+async function deleteNap(id){if(!confirm("Delete this sleep entry?"))return;await deleteDoc(doc(db,"napLogs",id));}
+function getLastCompletedNap(name){return naps.find(x=>x.baby===name&&x.endTime);}
+function getActiveNap(name){return naps.find(x=>x.baby===name&&!x.endTime);}
+function checkBabyAlerts(name){let activeNap=getActiveNap(name);if(activeNap){let sleepMinutes=minutesSince(activeNap.startTime);if(getSleepType(activeNap)==="bedtime"){alertHistory[name].nap=false;alertHistory[name].awake=false;return;}if(sleepMinutes>=appSettings.sleepyWarningHours*60&&!alertHistory[name].nap){alert("Sleepyhead Warning! "+name+" has been napping for "+appSettings.sleepyWarningHours+" hours!");alertHistory[name].nap=true;}alertHistory[name].awake=false;return;}alertHistory[name].nap=false;let lastCompletedNap=getLastCompletedNap(name);if(!lastCompletedNap)return;let awakeMinutes=minutesSince(lastCompletedNap.endTime);if(awakeMinutes>=appSettings.tiredWarningHours*60&&!alertHistory[name].awake){alert("Tired Baby Warning! "+name+" has been up for "+appSettings.tiredWarningHours+" hours!");alertHistory[name].awake=true;}}
+function checkAlerts(){checkBabyAlerts("Rowan");checkBabyAlerts("Julian");}
+function renderBaby(name){let last=feeds.find(x=>x.baby===name),activeNap=naps.find(x=>x.baby===name&&!x.endTime),lastCompletedNap=getLastCompletedNap(name),lower=name.toLowerCase();document.getElementById(lower+"Timer").innerHTML=last?since(last.time)+" since last bottle":"-- since last bottle";document.getElementById(lower+"Last").innerHTML=last?"Last bottle at "+clock(last.time)+" • "+last.oz+"oz":"No bottles yet";document.getElementById(lower+"NapStatus").innerHTML=activeNap?"Currently sleeping • "+prettySleepType(getSleepType(activeNap))+" • Started at "+clock(activeNap.startTime)+" • "+since(activeNap.startTime):"No active sleep";if(activeNap){document.getElementById(lower+"AwakeTime").innerHTML="Asleep for: "+since(activeNap.startTime);document.getElementById(lower+"NextNap").innerHTML="Next sleep: currently sleeping";}else{document.getElementById(lower+"AwakeTime").innerHTML=lastCompletedNap?"Awake for: "+since(lastCompletedNap.endTime):"Awake for: --";document.getElementById(lower+"NextNap").innerHTML=lastCompletedNap?predictedNextSleepText(name,lastCompletedNap):"Next sleep: --";}updateSleepPressure(name);updateNapButton(name);renderFeedLog(name);renderNapLog(name);}
+function renderFeedLog(name){let area=document.getElementById(name.toLowerCase()+"Log");area.innerHTML="";feeds.filter(x=>x.baby===name).forEach(item=>{let div=document.createElement("div");div.className="logEntry";let consumed=getConsumedOz(item),status=getFinishStatus(item),partialDisabled=status!=="Partial";let other=getOtherBaby(name);let givenTo=item.gaveRemainingTo||"";let remaining=Math.round((getPreparedOz(item)-consumed)*10)/10;div.innerHTML="<strong>"+clock(item.time)+"</strong> • "+item.oz+"oz bottle • drank "+consumed+"oz"+(givenTo?" • gave "+remaining+"oz to "+givenTo:"")+" • "+since(item.time)+" ago<br>";let controls=document.createElement("div");controls.className="bottleControls";let finishLabel=document.createElement("label");finishLabel.innerText="Finished Bottle? ";let finishSelect=document.createElement("select");finishSelect.innerHTML='<option value=""></option><option value="Yes">Yes</option><option value="No">No</option><option value="Partial">Partial</option>';finishSelect.value=status;finishSelect.onchange=function(){updateFinishStatus(item.id,this.value);};finishLabel.appendChild(finishSelect);controls.appendChild(finishLabel);let partialLabel=document.createElement("label");partialLabel.innerText="Ounces drank: ";let partialInput=document.createElement("input");partialInput.type="number";partialInput.min="0";partialInput.max=String(item.oz);partialInput.step="0.25";partialInput.placeholder="oz";partialInput.className="partialOzInput";partialInput.value=status==="Partial"?consumed:"";partialInput.disabled=partialDisabled;partialInput.onchange=function(){updateConsumedOz(item.id,this.value);};partialLabel.appendChild(partialInput);controls.appendChild(partialLabel);div.appendChild(controls);if(givenTo||((status==="No"||status==="Partial")&&remaining>0)){let giveBtn=document.createElement("button");giveBtn.className="giveRemainingBtn"+(givenTo?" active":"");giveBtn.innerText=givenTo?("✓ Gave remaining "+remaining+"oz to "+givenTo+" — tap to undo"):("Give remaining "+remaining+"oz to "+other);giveBtn.onclick=function(){toggleGaveRemaining(item.id);};div.appendChild(giveBtn);}let row=document.createElement("div");row.className="entryDateRow";let tWrap=document.createElement("span");tWrap.innerText="Time: ";let t=document.createElement("input");t.type="time";t.value=timeValue(item.time);t.onchange=function(){updateFeedTime(item.id,this.value);};tWrap.appendChild(t);let dWrap=document.createElement("span");dWrap.innerText="Date: ";let dt=document.createElement("input");dt.type="date";dt.value=localDateKey(item.time);dt.onchange=function(){updateFeedDate(item.id,this.value);};dWrap.appendChild(dt);row.appendChild(tWrap);row.appendChild(dWrap);div.appendChild(row);let note=document.createElement("input");note.type="text";note.className="noteInput";note.placeholder="Add a note (e.g. spit up, fussy)";note.maxLength=200;note.value=item.note||"";note.onchange=function(){updateFeedNote(item.id,this.value);};div.appendChild(note);let meta=byLine(item);if(meta){let m=document.createElement("div");m.className="entryMeta";m.innerText=meta;div.appendChild(m);}let del=document.createElement("button");del.innerText="Delete Bottle";del.className="deleteBtn";del.onclick=function(){deleteFeed(item.id);};div.appendChild(del);area.appendChild(div);});}
+function renderNapLog(name){let area=document.getElementById(name.toLowerCase()+"NapLog");area.innerHTML="";naps.filter(x=>x.baby===name).forEach(item=>{let div=document.createElement("div");div.className="logEntry";let type=getSleepType(item);div.innerHTML="<strong>"+clock(item.startTime)+"</strong> - "+(item.endTime?clock(item.endTime):"Still sleeping")+" • "+prettySleepType(type)+" • "+duration(item.startTime,item.endTime)+"<br>";let typeLabel=document.createElement("label");typeLabel.innerText="Sleep type: ";let typeSelect=document.createElement("select");typeSelect.innerHTML='<option value="nap">Nap</option><option value="bedtime">Bedtime</option>';typeSelect.value=type;typeSelect.onchange=function(){updateSleepType(item.id,this.value);};typeLabel.appendChild(typeSelect);div.appendChild(typeLabel);div.appendChild(document.createElement("br"));let r1=document.createElement("div");r1.className="entryDateRow";let s1=document.createElement("span");s1.innerText="Put down — time: ";let start=document.createElement("input");start.type="time";start.value=timeValue(item.startTime);start.onchange=function(){updateNapTime(item.id,"startTime",this.value);};s1.appendChild(start);let s1d=document.createElement("span");s1d.innerText="date: ";let startD=document.createElement("input");startD.type="date";startD.value=localDateKey(item.startTime);startD.onchange=function(){updateNapDate(item.id,"startTime",this.value);};s1d.appendChild(startD);r1.appendChild(s1);r1.appendChild(s1d);div.appendChild(r1);let r2=document.createElement("div");r2.className="entryDateRow";let s2=document.createElement("span");s2.innerText="Woke up — time: ";let end=document.createElement("input");end.type="time";end.value=timeValue(item.endTime);end.onchange=function(){updateNapTime(item.id,"endTime",this.value);};s2.appendChild(end);let s2d=document.createElement("span");s2d.innerText="date: ";let endD=document.createElement("input");endD.type="date";endD.value=item.endTime?localDateKey(item.endTime):"";endD.onchange=function(){updateNapDate(item.id,"endTime",this.value);};s2d.appendChild(endD);r2.appendChild(s2);r2.appendChild(s2d);div.appendChild(r2);let note=document.createElement("input");note.type="text";note.className="noteInput";note.placeholder="Add a note";note.maxLength=200;note.value=item.note||"";note.onchange=function(){updateNapNote(item.id,this.value);};div.appendChild(note);let meta=byLine(item);if(meta){let m=document.createElement("div");m.className="entryMeta";m.innerText=meta;div.appendChild(m);}let del=document.createElement("button");del.innerText="Delete Sleep";del.className="deleteBtn";del.onclick=function(){deleteNap(item.id);};div.appendChild(del);area.appendChild(div);});}
+function average(nums){if(nums.length===0)return 0;let total=nums.reduce((a,b)=>a+b,0);return Math.round(total/nums.length*10)/10;}
+function formatMinutes(mins){let h=Math.floor(mins/60),m=mins%60;return h>0?h+"h "+m+"m":m+"m";}
+function getTodayNaps(name){return naps.filter(n=>n.baby===name&&isToday(n.startTime));}
+function getTodayCompletedNaps(name){return naps.filter(n=>n.baby===name&&n.endTime&&isToday(n.startTime));}
+function getFavoriteBottleSize(name){let today=getDailyFeeds(name),counts={};today.forEach(f=>{let oz=String(f.oz||"?");counts[oz]=(counts[oz]||0)+1;});let best="--",bestCount=0;Object.keys(counts).forEach(k=>{if(counts[k]>bestCount){best=k;bestCount=counts[k];}});return best==="--"?"--":best+" oz";}
+function getDailyFormulaAverages(){let days={};feeds.forEach(item=>{let day=localDateKey(item.time);if(!days[day])days[day]={preparedOz:0,consumedOz:0,wastedPreparedOz:0,bottles:0};days[day].preparedOz+=getPreparedOz(item);days[day].consumedOz+=getConsumedOz(item);days[day].wastedPreparedOz+=getWastedPreparedOz(item);days[day].bottles+=1;});let keys=Object.keys(days);if(keys.length===0)return{dayCount:0,avgPreparedOzPerDay:0,avgConsumedOzPerDay:0,avgWastedPreparedOzPerDay:0,avgWastedPowderGramsPerDay:0,avgWastedPowderOzPerDay:0,avgWasteCostPerDay:0,avgPowderGramsUsedPerDay:0,avgPowderOzUsedPerDay:0,avgFormulaCostPerDay:0,avgFormulaCostPerWeek:0,avgPreparedOzPerWeek:0,avgPowderOzPerWeek:0,containersPerWeek:0,weeklyContainerCost:0};let totalPreparedOz=0,totalConsumedOz=0,totalWastedPreparedOz=0;keys.forEach(day=>{totalPreparedOz+=days[day].preparedOz;totalConsumedOz+=days[day].consumedOz;totalWastedPreparedOz+=days[day].wastedPreparedOz;});let dayCount=keys.length,avgPreparedOzPerDay=totalPreparedOz/dayCount,avgConsumedOzPerDay=totalConsumedOz/dayCount,avgWastedPreparedOzPerDay=totalWastedPreparedOz/dayCount,avgPowderGramsUsedPerDay=preparedOzToPowderGrams(avgPreparedOzPerDay),avgPowderOzUsedPerDay=powderGramsToPowderOz(avgPowderGramsUsedPerDay),avgFormulaCostPerDay=powderGramsToDollars(avgPowderGramsUsedPerDay),avgWastedPowderGramsPerDay=preparedOzToPowderGrams(avgWastedPreparedOzPerDay),avgWastedPowderOzPerDay=powderGramsToPowderOz(avgWastedPowderGramsPerDay),avgWasteCostPerDay=powderGramsToDollars(avgWastedPowderGramsPerDay),avgPreparedOzPerWeek=avgPreparedOzPerDay*7,avgPowderOzPerWeek=avgPowderOzUsedPerDay*7,containersPerWeek=(avgPowderGramsUsedPerDay*7)/CONTAINER_GRAMS,weeklyContainerCost=containersPerWeek*(CONTAINER_GRAMS*appSettings.formulaPricePerGram);return{dayCount,avgPreparedOzPerDay,avgConsumedOzPerDay,avgWastedPreparedOzPerDay,avgWastedPowderGramsPerDay,avgWastedPowderOzPerDay,avgWasteCostPerDay,avgPowderGramsUsedPerDay,avgPowderOzUsedPerDay,avgFormulaCostPerDay,avgFormulaCostPerWeek:avgFormulaCostPerDay*7,avgPreparedOzPerWeek,avgPowderOzPerWeek,containersPerWeek,weeklyContainerCost};}
+function getTodayWastedPreparedOz(){let total=0;feeds.forEach(item=>{if(isToday(item.time))total+=getWastedPreparedOz(item);});return Math.round(total*10)/10;}
+function statBox(title,value,note){return '<div class="statBox"><div class="statTitle">'+title+'</div><div class="statValue">'+value+'</div><div class="statNote">'+note+'</div></div>';}
+function renderStats(){let grid=document.getElementById("statsGrid"),totalOz=getTotalDailyOunces(),totalBottles=getTotalDailyBottleCount(),rowanNapMinutes=getTodayCompletedNaps("Rowan").filter(n=>getSleepType(n)==="nap").map(n=>minutesDuration(n.startTime,n.endTime)),julianNapMinutes=getTodayCompletedNaps("Julian").filter(n=>getSleepType(n)==="nap").map(n=>minutesDuration(n.startTime,n.endTime)),rowanBedMinutes=getTodayCompletedNaps("Rowan").filter(n=>getSleepType(n)==="bedtime").map(n=>minutesDuration(n.startTime,n.endTime)),julianBedMinutes=getTodayCompletedNaps("Julian").filter(n=>getSleepType(n)==="bedtime").map(n=>minutesDuration(n.startTime,n.endTime)),allSleepMinutes=naps.filter(n=>n.endTime).map(n=>minutesDuration(n.startTime,n.endTime)),longestSleep=allSleepMinutes.length?Math.max(...allSleepMinutes):0,rowanAvgBottle=average(getDailyFeeds("Rowan").map(getConsumedOz)),julianAvgBottle=average(getDailyFeeds("Julian").map(getConsumedOz)),rowanTodayNapTotal=rowanNapMinutes.reduce((a,b)=>a+b,0),julianTodayNapTotal=julianNapMinutes.reduce((a,b)=>a+b,0),rowanBedTotal=rowanBedMinutes.reduce((a,b)=>a+b,0),julianBedTotal=julianBedMinutes.reduce((a,b)=>a+b,0),rowanActive=getActiveNap("Rowan"),julianActive=getActiveNap("Julian"),formula=getDailyFormulaAverages(),todayWastePreparedOz=getTodayWastedPreparedOz(),todayWastePowderGrams=preparedOzToPowderGrams(todayWastePreparedOz),todayWastePowderOz=powderGramsToPowderOz(todayWastePowderGrams),todayWasteCost=powderGramsToDollars(todayWastePowderGrams),winner=getDailyOunces("Rowan")===getDailyOunces("Julian")?"Tie game!":getDailyOunces("Rowan")>getDailyOunces("Julian")?"Rowan leads today":"Julian leads today";grid.innerHTML=statBox("🍼 Bottle Battle Leader",winner,getDailyOunces("Rowan")+" oz vs "+getDailyOunces("Julian")+" oz")+statBox("🏆 Team Milk Total",totalOz+" oz",totalBottles+" "+bottleWord(totalBottles)+" logged today")+statBox("🎮 Parent Level","Level "+getParentLevelStats().level,getParentLevelStats().totalPoints+" all-time XP • "+getParentLevelStats().currentXP+" / "+getParentLevelStats().xpNeeded+" XP to Level "+(getParentLevelStats().level+1))+statBox("👯 Twin Sync Score",(getTwinSyncScoreToday()>=0?"+":"")+getTwinSyncScoreToday()+" pts today",(getParentLevelStats().allTimeSyncScore>=0?"+":"")+getParentLevelStats().allTimeSyncScore+" all-time sync points • +1/min both awake, -1/min mismatched")+statBox("💸 Formula Wasted Today",formatMoney(todayWasteCost),formatOz(todayWastePreparedOz)+" prepared oz wasted today • "+formatOz(todayWastePowderOz)+" powder oz today")+statBox("🥄 Powder Wasted Per Day",formatOz(formula.avgWastedPowderGramsPerDay)+" g",formatOz(formula.avgWastedPowderOzPerDay)+" oz of powder wasted on average")+statBox("📦 Formula Used Per Day",formatOz(formula.avgPowderOzUsedPerDay)+" powder oz",formatOz(formula.avgPowderGramsUsedPerDay)+" g powder/day • "+formatOz(formula.avgPreparedOzPerDay)+" prepared oz/day")+statBox("📅 Formula Used Per Week",formatOz(formula.avgPowderOzPerWeek)+" powder oz",formatMoney(formula.avgFormulaCostPerWeek)+" per week at the current average rate")+statBox("🛒 Containers Needed Weekly",formatOz(formula.containersPerWeek)+" containers/week","Round up to "+Math.ceil(formula.containersPerWeek)+" "+containerWord(Math.ceil(formula.containersPerWeek))+" per week • 1 container = 777g / 27.4oz / current price setting")+statBox("🔵 Rowan Avg Bottle",rowanAvgBottle+" oz","Favorite size today: "+getFavoriteBottleSize("Rowan"))+statBox("🟢 Julian Avg Bottle",julianAvgBottle+" oz","Favorite size today: "+getFavoriteBottleSize("Julian"))+statBox("☀️ Nap Time Today",formatMinutes(rowanTodayNapTotal+julianTodayNapTotal),"Rowan "+formatMinutes(rowanTodayNapTotal)+" • Julian "+formatMinutes(julianTodayNapTotal))+statBox("🌙 Bedtime Sleep Today",formatMinutes(rowanBedTotal+julianBedTotal),"Rowan "+formatMinutes(rowanBedTotal)+" • Julian "+formatMinutes(julianBedTotal))+statBox("🛏️ Sleep Sessions Today",getTodayNaps("Rowan").length+getTodayNaps("Julian").length,"Naps and bedtime sleep are automatically sorted by start time")+statBox("🌙 Longest Sleep Logged",formatMinutes(longestSleep),"Based on all completed sleep sessions")+statBox("⏱ Current Sleep Status",(rowanActive?"Rowan asleep for "+since(rowanActive.startTime)+" ("+prettySleepType(getSleepType(rowanActive))+")":"Rowan awake")+" / "+(julianActive?"Julian asleep for "+since(julianActive.startTime)+" ("+prettySleepType(getSleepType(julianActive))+")":"Julian awake"),"Live from current sleep logs")+statBox("🔥 Bottle Emoji Streak",getBottleEmojiString(Math.min(totalBottles,20)),totalBottles+" total bottles today");}
+function changeHistoryDay(offset){let d=new Date(selectedHistoryDateKey+"T12:00:00");d.setDate(d.getDate()+offset);selectedHistoryDateKey=localDateKey(d.toISOString());renderHistory();}
+function setHistoryDateFromPicker(){let picker=document.getElementById("historyDatePicker");if(picker.value){selectedHistoryDateKey=picker.value;renderHistory();}}
+function summarizeDay(dateKey){let dayFeeds=getAllFeedsForDate(dateKey),dayNaps=getAllNapsForDate(dateKey),rowanFeeds=getFeedsForDate("Rowan",dateKey),julianFeeds=getFeedsForDate("Julian",dateKey),rowanNaps=getNapsForDate("Rowan",dateKey),julianNaps=getNapsForDate("Julian",dateKey),rowanOz=dayFeeds.reduce((sum,item)=>sum+getConsumedOzForBaby(item,"Rowan"),0),julianOz=dayFeeds.reduce((sum,item)=>sum+getConsumedOzForBaby(item,"Julian"),0),preparedOz=dayFeeds.reduce((sum,item)=>sum+getPreparedOz(item),0),consumedOz=dayFeeds.reduce((sum,item)=>sum+getConsumedOz(item)+getRemainingGivenOz(item),0),wastedPreparedOz=dayFeeds.reduce((sum,item)=>sum+getWastedPreparedOz(item),0),powderUsedGrams=preparedOzToPowderGrams(preparedOz),powderWastedGrams=preparedOzToPowderGrams(wastedPreparedOz),completedDayNaps=dayNaps.filter(n=>n.endTime),totalSleepMinutes=completedDayNaps.reduce((sum,n)=>sum+minutesDuration(n.startTime,n.endTime),0),napMinutes=completedDayNaps.filter(n=>getSleepType(n)==="nap").reduce((sum,n)=>sum+minutesDuration(n.startTime,n.endTime),0),bedMinutes=completedDayNaps.filter(n=>getSleepType(n)==="bedtime").reduce((sum,n)=>sum+minutesDuration(n.startTime,n.endTime),0),rowanSleepMinutes=rowanNaps.filter(n=>n.endTime).reduce((sum,n)=>sum+minutesDuration(n.startTime,n.endTime),0),julianSleepMinutes=julianNaps.filter(n=>n.endTime).reduce((sum,n)=>sum+minutesDuration(n.startTime,n.endTime),0);return{dayFeeds,dayNaps,rowanFeeds,julianFeeds,rowanNaps,julianNaps,rowanOz:formatOz(rowanOz),julianOz:formatOz(julianOz),preparedOz:formatOz(preparedOz),consumedOz:formatOz(consumedOz),wastedPreparedOz:formatOz(wastedPreparedOz),wasteCost:formatMoney(powderGramsToDollars(powderWastedGrams)),powderUsedOz:formatOz(powderGramsToPowderOz(powderUsedGrams)),powderWastedOz:formatOz(powderGramsToPowderOz(powderWastedGrams)),totalSleepMinutes,napMinutes,bedMinutes,rowanSleepMinutes,julianSleepMinutes};}
+function renderHistory(){let picker=document.getElementById("historyDatePicker"),title=document.getElementById("historyDateTitle"),content=document.getElementById("historyContent");if(!picker||!title||!content)return;picker.value=selectedHistoryDateKey;title.innerHTML=fullDateLabel(selectedHistoryDateKey);let s=summarizeDay(selectedHistoryDateKey);if(s.dayFeeds.length===0&&s.dayNaps.length===0){content.innerHTML='<div class="emptyDay">No bottles or sleep logged for this day.</div>';return;}content.innerHTML='<div class="daySummary"><h3>Day Summary</h3><div class="daily-total-line"><span>Total Bottles</span><span>'+s.dayFeeds.length+'</span></div><div class="daily-total-line"><span>Total Drank</span><span>'+s.consumedOz+' oz</span></div><div class="daily-total-line"><span>Rowan</span><span>'+s.rowanFeeds.length+' bottles • '+s.rowanOz+' oz</span></div><div class="daily-total-line"><span>Julian</span><span>'+s.julianFeeds.length+' bottles • '+s.julianOz+' oz</span></div><div class="daily-total-line"><span>Total Sleep Time</span><span>'+formatMinutes(s.totalSleepMinutes)+'</span></div><div class="daily-total-line"><span>Nap Sleep</span><span>'+formatMinutes(s.napMinutes)+'</span></div><div class="daily-total-line"><span>Bedtime Sleep</span><span>'+formatMinutes(s.bedMinutes)+'</span></div><div class="daily-total-line"><span>Formula Wasted</span><span>'+s.wasteCost+' • '+s.wastedPreparedOz+' prepared oz</span></div><div class="daily-total-line"><span>Powder Used</span><span>'+s.powderUsedOz+' powder oz</span></div><div class="daily-total-line"><span>Powder Wasted</span><span>'+s.powderWastedOz+' powder oz</span></div><div class="bottle-emoji-row">'+getBottleEmojiString(s.dayFeeds.length)+'</div></div><div class="statGrid">'+statBox("🏆 Bottle Battle Winner",s.rowanOz===s.julianOz?"Tie game!":s.rowanOz>s.julianOz?"Rowan won the day":"Julian won the day",s.rowanOz+" oz vs "+s.julianOz+" oz")+statBox("😴 Sleepiest Twin",s.rowanSleepMinutes===s.julianSleepMinutes?"Tie sleep battle!":s.rowanSleepMinutes>s.julianSleepMinutes?"Rowan slept more":"Julian slept more",formatMinutes(s.rowanSleepMinutes)+" vs "+formatMinutes(s.julianSleepMinutes))+statBox("🌙 Nap vs Bedtime",formatMinutes(s.napMinutes)+" / "+formatMinutes(s.bedMinutes),"Nap sleep vs bedtime sleep")+statBox("💸 Waste Report",s.wasteCost,s.wastedPreparedOz+" prepared oz wasted • "+s.powderWastedOz+" powder oz")+'</div>'+renderHistoryLogGroup("Rowan Bottles",s.rowanFeeds,"feed")+renderHistoryLogGroup("Julian Bottles",s.julianFeeds,"feed")+renderHistoryLogGroup("Rowan Sleep",s.rowanNaps,"nap")+renderHistoryLogGroup("Julian Sleep",s.julianNaps,"nap");}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function metaHtml(item){return (item.note?'<div class="entryMeta">📝 '+escapeHtml(item.note)+'</div>':'')+(item.loggedBy?'<div class="entryMeta">Logged by '+escapeHtml(item.loggedBy)+'</div>':'');}
+function renderHistoryLogGroup(title,items,type){let html='<div class="previousLogGroup"><h3>'+title+'</h3>';if(items.length===0){html+='<div class="small">No entries.</div></div>';return html;}items.forEach(item=>{if(type==="feed"){html+='<div class="logEntry"><strong>'+clock(item.time)+'</strong> • '+item.oz+'oz bottle • drank '+getConsumedOz(item)+'oz'+(item.gaveRemainingTo?' • gave '+(Math.round(getRemainingGivenOz(item)*10)/10)+'oz to '+item.gaveRemainingTo:'')+metaHtml(item)+'</div>';}else{html+='<div class="logEntry"><strong>'+clock(item.startTime)+'</strong> - '+(item.endTime?clock(item.endTime):"Still sleeping")+' • '+prettySleepType(getSleepType(item))+' • '+duration(item.startTime,item.endTime)+metaHtml(item)+'</div>';}});html+='</div>';return html;}
+function updateBothButtons(){let btn=document.getElementById("sleepBothBtn");if(!btn)return;let anyActive=getActiveNap("Rowan")||getActiveNap("Julian");btn.innerHTML=anyActive?"⏰ Wake Both":"😴 Sleep Both";}
+function lastNDateKeys(n){let keys=[],d=new Date();for(let i=0;i<n;i++){keys.push(localDateKey(d.toISOString()));d.setDate(d.getDate()-1);}return keys;}
+function trendDayLabel(k){let d=new Date(k+"T12:00:00");return d.toLocaleDateString([],{weekday:"short",day:"numeric"});}
+function renderTrends(){let el=document.getElementById("trendsContent");if(!el)return;let keys=lastNDateKeys(14);let rows=keys.map(function(k){let dayFeeds=getAllFeedsForDate(k);let r=0,j=0;dayFeeds.forEach(function(it){r+=getConsumedOzForBaby(it,"Rowan");j+=getConsumedOzForBaby(it,"Julian");});let completed=getAllNapsForDate(k).filter(function(n){return n.endTime;});let sleep=completed.reduce(function(s,n){return s+minutesDuration(n.startTime,n.endTime);},0);return{key:k,rowan:r,julian:j,total:r+j,sleep:sleep};});if(!rows.some(function(x){return x.total>0||x.sleep>0;})){el.innerHTML='<div class="chartEmpty">No data in the last 14 days yet.</div>';return;}let maxOz=Math.max.apply(null,[1].concat(rows.map(function(x){return x.total;})));let maxSleep=Math.max.apply(null,[1].concat(rows.map(function(x){return x.sleep;})));let oz='<div class="chartCard"><div class="chartTitle">🍼 OUNCES PER DAY</div>';rows.forEach(function(x){let rw=(x.rowan/maxOz)*100,jw=(x.julian/maxOz)*100;oz+='<div class="chartRow"><div class="chartLabel">'+trendDayLabel(x.key)+'</div><div class="chartBarShell"><div class="chartBarA" style="width:'+rw+'%"></div><div class="chartBarB" style="width:'+jw+'%"></div></div><div class="chartVal">'+formatOz(x.total)+' oz</div></div>';});oz+='<div class="chartLegend">🔵 Rowan • 🟢 Julian</div></div>';let sl='<div class="chartCard"><div class="chartTitle">😴 SLEEP PER DAY</div>';rows.forEach(function(x){let w=(x.sleep/maxSleep)*100;sl+='<div class="chartRow"><div class="chartLabel">'+trendDayLabel(x.key)+'</div><div class="chartBarShell"><div class="chartBarSolid" style="width:'+w+'%"></div></div><div class="chartVal">'+formatMinutes(x.sleep)+'</div></div>';});sl+='<div class="chartLegend">Completed naps + bedtime sleep that started that day</div></div>';el.innerHTML=oz+sl;}
+function render(){setDefaultSleepTypeRadios();applyTheme();renderScoreboard();updateBothButtons();renderBaby("Rowan");renderBaby("Julian");if(currentMainTab==="Trends")renderTrends();if(currentMainTab==="Stats")renderStats();if(currentMainTab==="History")renderHistory();}
+let activeEditCount=0,renderQueued=false;
+function isEditing(){return activeEditCount>0;}
+function safeRender(){if(isEditing()){renderQueued=true;return;}try{render();checkAlerts();}catch(error){console.error("Render error:",error);}}
+document.addEventListener("focusin",function(e){if(e.target&&e.target.matches&&e.target.matches("input,select,textarea"))activeEditCount++;});
+document.addEventListener("focusout",function(e){if(e.target&&e.target.matches&&e.target.matches("input,select,textarea")){activeEditCount=Math.max(0,activeEditCount-1);setTimeout(function(){if(!isEditing()&&renderQueued){renderQueued=false;safeRender();}},300);}});
+onSnapshot(query(feedsRef,orderBy("time","desc")),snapshot=>{feeds=[];snapshot.forEach(docSnap=>{feeds.push({id:docSnap.id,...docSnap.data()});});document.getElementById("status").innerText="Live sync active";safeRender();},error=>{document.getElementById("status").innerText="Sync error: "+error.message;});
+onSnapshot(query(napsRef,orderBy("startTime","desc")),snapshot=>{naps=[];snapshot.forEach(docSnap=>{naps.push({id:docSnap.id,...docSnap.data()});});syncScoreCache={};document.getElementById("status").innerText="Live sync active";safeRender();},error=>{document.getElementById("status").innerText="Sync error: "+error.message;});
+window.logFeed=logFeed;window.toggleNap=toggleNap;window.startNap=startNap;window.endNap=endNap;window.toggleTummyTime=toggleTummyTime;window.showBaby=showBaby;window.showMainTab=showMainTab;window.showLogTab=showLogTab;window.refreshApp=refreshApp;window.changeHistoryDay=changeHistoryDay;window.setHistoryDateFromPicker=setHistoryDateFromPicker;window.saveSettingsFromForm=saveSettingsFromForm;window.resetSettings=resetSettings;window.updateFormulaCostPreview=updateFormulaCostPreview;window.cycleTheme=cycleTheme;window.feedBoth=feedBoth;window.sleepBoth=sleepBoth;window.enableNotifications=enableNotifications;
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+loadSettings();applyTheme();renderSettings();safeRender();setInterval(()=>{safeRender();},30000);
+</script>
+</body>
+</html>
