@@ -2,7 +2,7 @@ name: Twin Tracker backend
 
 on:
   schedule:
-    - cron: "*/5 * * * *"    # every 5 min: catch SNOO wake-ups promptly + send due alerts
+    - cron: "*/5 * * * *"    # fires ~every 5 min; each run does 3 passes 2 min apart (~2-min effective cadence)
   workflow_dispatch:          # allow manual runs (and dry runs)
     inputs:
       dry_run:
@@ -14,6 +14,10 @@ on:
         type: choice
         default: default
         options: [default, snoo-discover]
+
+concurrency:
+  group: twin-tracker-backend
+  cancel-in-progress: true
 
 jobs:
   run:
@@ -36,4 +40,13 @@ jobs:
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           SNOO_EMAIL: ${{ secrets.SNOO_EMAIL }}
           SNOO_PASSWORD: ${{ secrets.SNOO_PASSWORD }}
-        run: node sender.js
+        run: |
+          # GitHub cron fires ~every 5 min; run 3 passes 2 min apart for an effective ~2-min cadence.
+          passes=1
+          if [ "${{ github.event_name }}" = "schedule" ]; then passes=3; fi
+          for i in $(seq 1 $passes); do
+            echo "::group::pass $i/$passes"
+            node sender.js || true
+            echo "::endgroup::"
+            if [ "$i" -lt "$passes" ]; then sleep 120; fi
+          done
