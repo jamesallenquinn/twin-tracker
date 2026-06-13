@@ -2,7 +2,7 @@ name: Twin Tracker backend
 
 on:
   schedule:
-    - cron: "*/5 * * * *"    # fires ~every 5 min; each run does 3 passes 2 min apart (~2-min effective cadence)
+    - cron: "*/10 * * * *"   # best-effort restart; the job itself loops internally every 2 min for ~5.5h
   workflow_dispatch:          # allow manual runs (and dry runs)
     inputs:
       dry_run:
@@ -14,6 +14,10 @@ on:
         type: choice
         default: default
         options: [default, snoo-discover]
+      loop_seconds:
+        description: "Override loop duration in seconds (blank = default)"
+        type: string
+        default: ""
 
 concurrency:
   group: twin-tracker-backend
@@ -22,6 +26,7 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
+    timeout-minutes: 350   # allow the internal ~5.5h loop to run
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,18 +40,10 @@ jobs:
         env:
           DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
           MODE: ${{ inputs.mode || 'default' }}
+          LOOP_SECONDS: ${{ inputs.loop_seconds }}
           VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
           SNOO_EMAIL: ${{ secrets.SNOO_EMAIL }}
           SNOO_PASSWORD: ${{ secrets.SNOO_PASSWORD }}
-        run: |
-          # GitHub cron fires ~every 5 min; run 3 passes 2 min apart for an effective ~2-min cadence.
-          passes=1
-          if [ "${{ github.event_name }}" = "schedule" ]; then passes=3; fi
-          for i in $(seq 1 $passes); do
-            echo "::group::pass $i/$passes"
-            node sender.js || true
-            echo "::endgroup::"
-            if [ "$i" -lt "$passes" ]; then sleep 120; fi
-          done
+        run: node sender.js

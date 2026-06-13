@@ -70,20 +70,51 @@ function inferSleepTypeNY(iso) {
 function activeNap(naps, baby) { return naps.find(n => n.baby === baby && !n.endTime); }
 function lastCompletedNap(naps, baby) { return naps.filter(n => n.baby === baby && n.endTime).sort((a, b) => new Date(b.endTime) - new Date(a.endTime))[0]; }
 function lastBottle(feeds, baby) { return feeds.filter(f => f.baby === baby).sort((a, b) => new Date(b.time) - new Date(a.time))[0]; }
-async function loadAll() { return Promise.all([listCollection("feedingLogs"), listCollection("napLogs")]); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function runQuery(structuredQuery) {
+  const res = await fetch(`${BASE}:runQuery?key=${API_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ structuredQuery }) });
+  if (!res.ok) throw new Error(`Firestore runQuery ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const data = await res.json();
+  return (data || []).filter(r => r.document).map(r => decodeDoc(r.document));
+}
+function queryRecent(name, field, limit) {
+  return runQuery({ from: [{ collectionId: name }], orderBy: [{ field: { fieldPath: field }, direction: "DESCENDING" }], limit });
+}
+function queryEquals(name, field, value, limit = 50) {
+  return runQuery({ from: [{ collectionId: name }], where: { fieldFilter: { field: { fieldPath: field }, op: "EQUAL", value: { stringValue: value } } }, limit });
+}
+// Lean reads so a 2-min loop stays well under Firestore's free 50k/day: recent feeds/naps + any open naps.
+async function loadRecent() {
+  const [recentFeeds, recentNaps, openNaps] = await Promise.all([
+    queryRecent("feedingLogs", "time", 24),
+    queryRecent("napLogs", "startTime", 24),
+    queryEquals("napLogs", "endTime", "")
+  ]);
+  const napMap = {}; [...recentNaps, ...openNaps].forEach(n => napMap[n._id] = n);
+  return { feeds: recentFeeds, naps: Object.values(napMap) };
+}
+// Cache the SNOO token so we don't hit the (unofficial) login endpoint every pass.
+let snooTok = { token: null, ts: 0 };
+async function getSnooToken() {
+  if (snooTok.token && Date.now() - snooTok.ts < 50 * 60000) return snooTok.token;
+  const email = process.env.SNOO_EMAIL, password = process.env.SNOO_PASSWORD;
+  if (!email || !password) return null;
+  const { snooLogin } = require("./snoo");
+  snooTok = { token: (await snooLogin(email, password)).idToken, ts: Date.now() };
+  return snooTok.token;
+}
 
 // ---- SNOO import (source of truth for sleep) ----
 async function importSnoo(dryRun) {
-  const email = process.env.SNOO_EMAIL, password = process.env.SNOO_PASSWORD;
-  if (!email || !password) { console.log("[snoo] no credentials set, skipping import"); return; }
-  const { snooLogin, snooGet, EP } = require("./snoo");
-  let idToken;
-  try { idToken = (await snooLogin(email, password)).idToken; } catch (e) { console.log("[snoo] login failed:", e.message); return; }
+  const { snooGet, EP } = require("./snoo");
+  const idToken = await getSnooToken();
+  if (!idToken) { console.log("[snoo] no credentials set, skipping import"); return; }
   let babies;
-  try { babies = await snooGet(idToken, EP.babies); } catch (e) { console.log("[snoo] babies failed:", e.message); return; }
+  try { babies = await snooGet(idToken, EP.babies); } catch (e) { console.log("[snoo] babies failed:", e.message); snooTok = { token: null, ts: 0 }; return; }
   (Array.isArray(babies) ? babies : []).forEach(b => { const n = b.babyName || b.name; if (n in TWIN_BABY_IDS) TWIN_BABY_IDS[n] = b._id || b.babyId; });
 
-  const allNaps = await listCollection("napLogs");
+  let openSnoo = [];
+  try { openSnoo = (await queryEquals("napLogs", "endTime", "")).filter(n => n.source === "snoo"); } catch (e) { console.log("[snoo] open-naps query failed:", e.message); }
   const now = Date.now();
 
   for (const baby of BABIES) {
@@ -102,7 +133,7 @@ async function importSnoo(dryRun) {
 
     // SAFEGUARD: only the CURRENT session may stay open. Close every other open SNOO
     // entry for this baby (a missed wake-up) so nothing is ever stuck "asleep" forever.
-    const opens = allNaps.filter(n => n.baby === baby && n.source === "snoo" && (!n.endTime || n.endTime === ""));
+    const opens = openSnoo.filter(n => n.baby === baby);
     for (const d of opens) {
       const dStartMs = new Date(d.startTime).getTime();
       if (dStartMs === startMs) continue; // the current session, handled below
@@ -199,11 +230,35 @@ async function main() {
     return;
   }
 
-  await importSnoo(DRY_RUN);
-  let [feeds, naps] = await loadAll(); // re-read after any SNOO writes
-  console.log(`[twin-tracker] ${feeds.length} feeds, ${naps.length} naps`);
-  await sendPushAlerts(DRY_RUN, feeds, naps);
+  // Loop internally (default 2-min interval) for real runs — GitHub's cron is too
+  // unreliable for frequent scheduling, so one job covers a long stretch. Dry-run /
+  // discover do a single pass.
+  const lsEnv = process.env.LOOP_SECONDS;
+  const loopSec = (lsEnv != null && lsEnv !== "") ? Number(lsEnv)
+    : (!DRY_RUN && (process.env.MODE || "default") === "default" ? 19800 : 0);
+  const intervalMs = Number(process.env.INTERVAL_SECONDS || 120) * 1000;
+
+  if (loopSec > 0) {
+    const end = Date.now() + loopSec * 1000;
+    let i = 0;
+    while (Date.now() < end) {
+      i++;
+      console.log(`[twin-tracker] === pass ${i} === ${new Date().toISOString()}`);
+      try { await runOnce(DRY_RUN); } catch (e) { console.error("[twin-tracker] pass error:", e.message); }
+      if (Date.now() + intervalMs < end) await sleep(intervalMs); else break;
+    }
+    console.log(`[twin-tracker] loop finished after ${i} passes.`);
+  } else {
+    await runOnce(DRY_RUN);
+  }
   console.log("[twin-tracker] done.");
+}
+
+async function runOnce(dryRun) {
+  await importSnoo(dryRun);
+  const { feeds, naps } = await loadRecent();
+  console.log(`[twin-tracker] recent: ${feeds.length} feeds, ${naps.length} naps`);
+  await sendPushAlerts(dryRun, feeds, naps);
 }
 
 main().catch(err => { console.error("[twin-tracker] ERROR:", err); process.exit(1); });
