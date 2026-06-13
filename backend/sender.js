@@ -151,8 +151,14 @@ async function sendPushAlerts(dryRun, feeds, naps) {
   alerts.forEach(a => console.log(`   - [${a.kind}] ${a.body}`));
   if (!alerts.length) return;
 
-  const subs = await listCollection("pushSubs");
-  const state = {}; (await listCollection("alertState")).forEach(d => state[d._id] = d);
+  let subs = [], state = {};
+  try {
+    subs = await listCollection("pushSubs");
+    (await listCollection("alertState")).forEach(d => state[d._id] = d);
+  } catch (e) {
+    console.log("[push] push collections not accessible yet — Firestore rules need pushSubs/alertState. Skipping push.", e.message);
+    return;
+  }
   if (!subs.length) console.log("[push] no subscriptions registered yet (install the app + Enable Notifications).");
 
   let webpush = null;
