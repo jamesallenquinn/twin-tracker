@@ -13,6 +13,8 @@ const TIRED_AWAKE_MIN = 3 * 60;     // awake this long -> tired warning
 const FEED_DUE_MIN = 3 * 60;        // since last bottle -> feed due
 const NAP_TOO_LONG_MIN = 2 * 60;    // active nap this long -> napping warning
 const THROTTLE_MIN = 90;            // don't repeat the same alert within this window
+const MIN_SESSION_MIN = 5;          // ignore SNOO on/off blips shorter than this
+const MAX_SLEEP_MS = 12 * 3600000;  // cap an auto-closed orphaned sleep at 12h
 const TZ = "America/Los_Angeles";
 const TWIN_BABY_IDS = { Rowan: null, Julian: null }; // resolved by name at runtime
 const BABIES = ["Rowan", "Julian"];
@@ -81,6 +83,9 @@ async function importSnoo(dryRun) {
   try { babies = await snooGet(idToken, EP.babies); } catch (e) { console.log("[snoo] babies failed:", e.message); return; }
   (Array.isArray(babies) ? babies : []).forEach(b => { const n = b.babyName || b.name; if (n in TWIN_BABY_IDS) TWIN_BABY_IDS[n] = b._id || b.babyId; });
 
+  const allNaps = await listCollection("napLogs");
+  const now = Date.now();
+
   for (const baby of BABIES) {
     const id = TWIN_BABY_IDS[baby];
     if (!id) { console.log(`[snoo] no SNOO baby named ${baby}`); continue; }
@@ -90,11 +95,30 @@ async function importSnoo(dryRun) {
     const levels = s.levels || [];
     const completed = levels.length > 0 && levels[levels.length - 1].level === "ONLINE";
     const startIso = new Date(s.startTime).toISOString();
-    const endIso = (completed && s.endTime) ? new Date(s.endTime).toISOString() : "";
+    const startMs = new Date(startIso).getTime();
+    const realEndIso = s.endTime ? new Date(s.endTime).toISOString() : "";
     const sleepType = inferSleepTypeNY(startIso);
-    const docId = `snoo-${baby}-${new Date(startIso).getTime()}`;
+    const docId = `snoo-${baby}-${startMs}`;
+
+    // SAFEGUARD: only the CURRENT session may stay open. Close every other open SNOO
+    // entry for this baby (a missed wake-up) so nothing is ever stuck "asleep" forever.
+    const opens = allNaps.filter(n => n.baby === baby && n.source === "snoo" && (!n.endTime || n.endTime === ""));
+    for (const d of opens) {
+      const dStartMs = new Date(d.startTime).getTime();
+      if (dStartMs === startMs) continue; // the current session, handled below
+      const closeMs = Math.max(dStartMs + 60000, Math.min(startMs, dStartMs + MAX_SLEEP_MS));
+      const closeIso = new Date(closeMs).toISOString();
+      if (dryRun) { console.log(`[snoo] WOULD close orphaned open ${d._id} -> ${closeIso}`); }
+      else { try { await patchDoc("napLogs", d._id, { baby, startTime: d.startTime, endTime: closeIso, sleepType: d.sleepType || inferSleepTypeNY(d.startTime), source: "snoo" }); console.log(`[snoo] closed orphaned open ${d._id} -> ${closeIso}`); } catch (e) { console.log(`[snoo] close ${d._id}: ${e.message}`); } }
+    }
+
+    // SAFEGUARD: ignore on/off blips shorter than the minimum.
+    const durMin = (completed ? new Date(realEndIso).getTime() : now) - startMs;
+    if (completed && durMin / 60000 < MIN_SESSION_MIN) { console.log(`[snoo] ${baby}: skip blip (${(durMin / 60000).toFixed(1)}m)`); continue; }
+
+    const endIso = completed ? realEndIso : ""; // ongoing stays open (live); the sweep guarantees it closes
     const fields = { baby, startTime: startIso, endTime: endIso, sleepType, source: "snoo" };
-    const desc = `${baby} ${startIso} -> ${endIso || "(ongoing)"} [${sleepType}]`;
+    const desc = `${baby} ${startIso} -> ${endIso || "(sleeping)"} [${sleepType}] ~${Math.round(durMin / 60000)}m`;
     if (dryRun) { console.log(`[snoo] WOULD upsert ${docId}: ${desc}`); }
     else { try { await patchDoc("napLogs", docId, fields); console.log(`[snoo] upserted ${docId}: ${desc}`); } catch (e) { console.log(`[snoo] write ${baby}: ${e.message}`); } }
   }

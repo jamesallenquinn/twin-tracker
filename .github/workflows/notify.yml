@@ -2,7 +2,7 @@ name: Twin Tracker backend
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # every 15 min: import SNOO sessions + send due alerts
+    - cron: "*/5 * * * *"    # every 5 min: catch SNOO wake-ups promptly + send due alerts
   workflow_dispatch:          # allow manual runs (and dry runs)
     inputs:
       dry_run:
