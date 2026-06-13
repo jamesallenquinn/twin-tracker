@@ -236,7 +236,7 @@ async function main() {
   const lsEnv = process.env.LOOP_SECONDS;
   const loopSec = (lsEnv != null && lsEnv !== "") ? Number(lsEnv)
     : (!DRY_RUN && (process.env.MODE || "default") === "default" ? 19800 : 0);
-  const intervalMs = Number(process.env.INTERVAL_SECONDS || 120) * 1000;
+  const intervalMs = Number(process.env.INTERVAL_SECONDS || 180) * 1000;
 
   if (loopSec > 0) {
     const end = Date.now() + loopSec * 1000;
