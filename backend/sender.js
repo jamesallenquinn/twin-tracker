@@ -254,10 +254,20 @@ async function main() {
   console.log("[twin-tracker] done.");
 }
 
+async function cleanupShortNaps(dryRun, naps) {
+  const shorts = naps.filter(n => n.endTime && n.endTime !== "" && (new Date(n.endTime).getTime() - new Date(n.startTime).getTime()) / 60000 < MIN_SESSION_MIN);
+  for (const n of shorts) {
+    const m = ((new Date(n.endTime).getTime() - new Date(n.startTime).getTime()) / 60000).toFixed(1);
+    if (dryRun) { console.log(`[cleanup] WOULD delete short nap ${n._id} (${m}m)`); }
+    else { try { await deleteDocRest("napLogs", n._id); console.log(`[cleanup] deleted short nap ${n._id} (${m}m)`); } catch (e) { console.log(`[cleanup] delete ${n._id}: ${e.message}`); } }
+  }
+}
+
 async function runOnce(dryRun) {
   await importSnoo(dryRun);
   const { feeds, naps } = await loadRecent();
   console.log(`[twin-tracker] recent: ${feeds.length} feeds, ${naps.length} naps`);
+  await cleanupShortNaps(dryRun, naps);
   await sendPushAlerts(dryRun, feeds, naps);
 }
 
