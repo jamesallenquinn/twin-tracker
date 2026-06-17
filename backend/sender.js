@@ -1,6 +1,6 @@
 // Twin Tracker scheduled backend.
 // - Imports SNOO sleep sessions into Firestore (SNOO = source of truth for sleep).
-// - Sends web-push alerts (tired / feed-due / napping-too-long) with throttling.
+// - Sends web-push feed-due reminders with throttling.
 // Firestore rules are open, so we read/write over REST with the public web API key.
 
 const PROJECT = "twin-feeding-log-tracker";
@@ -9,9 +9,7 @@ const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/
 
 const DRY_RUN = String(process.env.DRY_RUN || "true") !== "false";
 
-const TIRED_AWAKE_MIN = 3 * 60;     // awake this long -> tired warning
 const FEED_DUE_MIN = 3 * 60;        // since last bottle -> feed due
-const NAP_TOO_LONG_MIN = 2 * 60;    // active nap this long -> napping warning
 const THROTTLE_MIN = 90;            // don't repeat the same alert within this window
 const MIN_SESSION_MIN = 5;          // ignore SNOO on/off blips shorter than this
 const MAX_SLEEP_MS = 12 * 3600000;  // cap an auto-closed orphaned sleep at 12h
@@ -159,17 +157,7 @@ async function importSnoo(dryRun) {
 function evaluateAlerts(feeds, naps) {
   const alerts = [];
   for (const baby of BABIES) {
-    const nap = activeNap(naps, baby);
-    if (nap) {
-      const type = nap.sleepType || inferSleepTypeNY(nap.startTime);
-      if (type !== "bedtime") {
-        const dur = minsSince(nap.startTime);
-        if (dur >= NAP_TOO_LONG_MIN) alerts.push({ baby, kind: "napping", title: "Long nap", body: `${baby} has been napping ${fmt(dur)}.` });
-      }
-      continue; // asleep -> no tired/feed alerts
-    }
-    const last = lastCompletedNap(naps, baby);
-    if (last) { const awake = minsSince(last.endTime); if (awake >= TIRED_AWAKE_MIN) alerts.push({ baby, kind: "tired", title: "Tired baby", body: `${baby} has been awake ${fmt(awake)}.` }); }
+    if (activeNap(naps, baby)) continue; // asleep -> no feed alert
     const bottle = lastBottle(feeds, baby);
     if (bottle) { const since = minsSince(bottle.time); if (since >= FEED_DUE_MIN) alerts.push({ baby, kind: "feed", title: "Feed due", body: `${baby}'s last bottle was ${fmt(since)} ago.` }); }
   }
