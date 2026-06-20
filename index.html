@@ -150,6 +150,14 @@ body.night .quickHint,body.night .entryMeta{color:#7e8398;}
 </div>
 
 <div class="settingBox">
+<div class="settingTitle">BABY AGE (NAP SUGGESTIONS)</div>
+<label for="birthDate" style="font-size:14px;font-weight:800;">Twins' birth date</label>
+<input type="date" id="birthDate" onchange="updateAgePreview()" style="width:100%;box-sizing:border-box;margin-top:6px;">
+<div class="settingNote" id="agePreview">Set the birth date to enable age-based nap suggestions.</div>
+<div class="settingNote">Next-sleep suggestions blend age-typical wake windows with your twins' recorded data, and shorten after a short nap.</div>
+</div>
+
+<div class="settingBox">
 <div class="settingTitle">SLEEP PRESSURE / WAKE WINDOW</div>
 <div class="settingRow">
 <label for="wakeWindowStartHours">80% sleep pressure at</label>
@@ -195,6 +203,7 @@ let alertHistory={Rowan:{awake:false,nap:false},Julian:{awake:false,nap:false}};
 let appSettings={
 wakeWindowStartHours:2,
 wakeWindowFullHours:3,
+birthDate:"",
 formulaPricePerGram:DEFAULT_FORMULA_PRICE_PER_GRAM
 };
 let tummyTimeState=loadTummyTimeState();
@@ -349,8 +358,21 @@ price.value=Number(appSettings.formulaPricePerGram).toFixed(4);
 let nameInput=document.getElementById("loggedByName");
 if(nameInput)nameInput.value=loggedByName;
 
+let birth=document.getElementById("birthDate");
+if(birth)birth.value=appSettings.birthDate||"";
+
 updateFormulaCostPreview();
 updateNotifStatus();
+updateAgePreview();
+}
+function updateAgePreview(){
+let el=document.getElementById("agePreview");if(!el)return;
+let inp=document.getElementById("birthDate");
+let bd=(inp&&inp.value)||appSettings.birthDate;
+let t=bd?new Date(bd+"T12:00:00").getTime():NaN;
+let w=isNaN(t)?null:Math.floor((Date.now()-t)/(7*86400000));
+if(w==null||w<0){el.innerHTML="Set the birth date to enable age-based nap suggestions.";return;}
+el.innerHTML="Twins are about "+w+" weeks ("+Math.round(w/4.345)+" months) old. Age-typical wake window: ~"+formatMinutes(ageBaselineWakeMin(w))+".";
 }
 
 function updateFormulaCostPreview(){
@@ -371,6 +393,8 @@ function saveSettingsFromForm(){
 appSettings.wakeWindowStartHours=Number(document.getElementById("wakeWindowStartHours").value);
 appSettings.wakeWindowFullHours=Number(document.getElementById("wakeWindowFullHours").value);
 appSettings.formulaPricePerGram=Number(document.getElementById("formulaPricePerGram").value);
+let birth=document.getElementById("birthDate");
+if(birth)appSettings.birthDate=birth.value||"";
 let nameInput=document.getElementById("loggedByName");
 if(nameInput){loggedByName=nameInput.value.trim().slice(0,20);localStorage.setItem("twinTrackerLoggedBy",loggedByName);}
 saveSettings();
@@ -383,6 +407,7 @@ localStorage.removeItem("twinTrackerSettings");
 appSettings={
 wakeWindowStartHours:2,
 wakeWindowFullHours:3,
+birthDate:"",
 formulaPricePerGram:DEFAULT_FORMULA_PRICE_PER_GRAM
 };
 saveSettings();
@@ -427,8 +452,43 @@ const WAKE_WINDOW_DAYS=4;
 function wakeChunk(h){if(h>=6&&h<10)return "morning";if(h>=10&&h<14)return "midday";if(h>=14&&h<21)return "evening";return "night";}
 function getWakeWindows(name){let cutoff=Date.now()-WAKE_WINDOW_DAYS*24*3600000;let sleeps=naps.filter(x=>x.baby===name&&x.endTime).sort((a,b)=>new Date(a.startTime)-new Date(b.startTime));let windows=[];for(let i=1;i<sleeps.length;i++){let prevEnd=new Date(sleeps[i-1].endTime).getTime();let gap=Math.floor((new Date(sleeps[i].startTime).getTime()-prevEnd)/60000);if(gap>0&&gap<=360&&prevEnd>=cutoff)windows.push({hour:new Date(prevEnd).getHours(),gap:gap});}return windows;}
 function avgGap(ws){return Math.round(ws.reduce((a,w)=>a+w.gap,0)/ws.length);}
-function getWakeWindowEstimate(name,anchorDate){let windows=getWakeWindows(name);if(windows.length<2)return null;if(anchorDate!=null){let chunk=wakeChunk(new Date(anchorDate).getHours());let inChunk=windows.filter(w=>wakeChunk(w.hour)===chunk);if(inChunk.length>=2)return {win:avgGap(inChunk),basis:chunk};}return {win:avgGap(windows),basis:"recent"};}
-function predictedNextSleepText(name,lastNap){let est=getWakeWindowEstimate(name,lastNap.endTime);let win=est?est.win:Math.round(appSettings.wakeWindowFullHours*60);let predicted=addMinutesClock(lastNap.endTime,win);let note=est?(est.basis==="recent"?"4-day avg "+formatMinutes(win):est.basis+" avg "+formatMinutes(win)):"~"+formatMinutes(win)+" window";return "Next sleep around "+predicted+" ("+note+")";}
+// Age baseline wake window (minutes) interpolated from published wake-window-by-age norms.
+const WW_AGE_ANCHORS=[[2,45],[8,75],[15,100],[26,150],[39,180],[56,210],[78,270],[104,300]];
+function babyAgeWeeks(){if(!appSettings.birthDate)return null;let t=new Date(appSettings.birthDate+"T12:00:00").getTime();if(isNaN(t))return null;let w=Math.floor((Date.now()-t)/(7*86400000));return w>=0?w:null;}
+function ageBaselineWakeMin(weeks){if(weeks==null)return null;let A=WW_AGE_ANCHORS;if(weeks<=A[0][0])return A[0][1];if(weeks>=A[A.length-1][0])return A[A.length-1][1];for(let i=1;i<A.length;i++){if(weeks<=A[i][0]){let p=A[i-1],q=A[i];return Math.round(p[1]+(q[1]-p[1])*((weeks-p[0])/(q[0]-p[0])));}}return A[A.length-1][1];}
+function chunkModifier(chunk){return chunk==="morning"?0.85:chunk==="evening"?1.15:chunk==="night"?0.65:1;}
+function napMinutes(item){return item&&item.endTime?Math.max(0,Math.floor((new Date(item.endTime).getTime()-new Date(item.startTime).getTime())/60000)):0;}
+function recommendWakeWindow(name,anchorDate,lastNap){
+let chunk=wakeChunk(new Date(anchorDate).getHours());
+let weeks=babyAgeWeeks();
+let ageBase=ageBaselineWakeMin(weeks);
+let ageChunk=ageBase!=null?Math.round(ageBase*chunkModifier(chunk)):null;
+let windows=getWakeWindows(name);
+let inChunk=windows.filter(w=>wakeChunk(w.hour)===chunk);
+let recChunk=inChunk.length>=2?avgGap(inChunk):null;
+let recAll=windows.length>=2?avgGap(windows):null;
+let win,basis;
+if(ageChunk!=null&&recChunk!=null){let wt=Math.min(0.65,inChunk.length*0.18);win=Math.round(wt*recChunk+(1-wt)*ageChunk);basis="age+yours";}
+else if(ageChunk!=null&&recAll!=null){win=Math.round(0.4*recAll+0.6*ageChunk);basis="age+yours";}
+else if(ageChunk!=null){win=ageChunk;basis="age";}
+else if(recChunk!=null){win=recChunk;basis="yours";}
+else if(recAll!=null){win=recAll;basis="yours";}
+else{win=Math.round(appSettings.wakeWindowFullHours*60);basis="default";}
+let shortNap=false,lastMin=0;
+if(lastNap&&getSleepType(lastNap)!=="bedtime"){lastMin=napMinutes(lastNap);if(lastMin>0&&lastMin<=45){shortNap=true;win=win-30;}}
+let floor=ageBase!=null?Math.max(20,Math.round(ageBase*0.5)):20;
+if(win<floor)win=floor;if(win>360)win=360;
+return {win:win,basis:basis,chunk:chunk,weeks:weeks,shortNap:shortNap,lastMin:lastMin};
+}
+function predictedNextSleepText(name,lastNap){
+let r=recommendWakeWindow(name,lastNap.endTime,lastNap);
+let predicted=addMinutesClock(lastNap.endTime,r.win);
+let mo=r.weeks!=null?Math.round(r.weeks/4.345):null;
+let tag=r.basis==="age+yours"?("age "+mo+"mo + your data"):r.basis==="age"?("age "+mo+"mo norm"):r.basis==="yours"?"your recent data":"default";
+let txt="Next sleep around "+predicted+" — "+formatMinutes(r.win)+" window ("+tag+")";
+if(r.shortNap)txt+=" · shortened after a "+r.lastMin+"m nap";
+return txt;
+}
 function timeValue(iso){if(!iso)return"";let d=new Date(iso),h=String(d.getHours()).padStart(2,'0'),m=String(d.getMinutes()).padStart(2,'0');return h+":"+m;}
 function localDateKey(time){let d=new Date(time),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day;}
 function isToday(time){return localDateKey(time)===localDateKey(new Date().toISOString());}
@@ -703,7 +763,7 @@ document.addEventListener("focusout",function(e){if(e.target&&e.target.matches&&
 onSnapshot(query(feedsRef,orderBy("time","desc")),snapshot=>{feeds=[];snapshot.forEach(docSnap=>{feeds.push({id:docSnap.id,...docSnap.data()});});document.getElementById("status").innerText="Live sync active";safeRender();},error=>{document.getElementById("status").innerText="Sync error: "+error.message;});
 onSnapshot(query(napsRef,orderBy("startTime","desc")),snapshot=>{naps=[];snapshot.forEach(docSnap=>{naps.push({id:docSnap.id,...docSnap.data()});});syncScoreCache={};document.getElementById("status").innerText="Live sync active";safeRender();},error=>{document.getElementById("status").innerText="Sync error: "+error.message;});
 onSnapshot(query(bathsRef,orderBy("time","desc")),snapshot=>{baths=[];snapshot.forEach(docSnap=>{baths.push({id:docSnap.id,...docSnap.data()});});safeRender();},error=>{console.warn("Bath sync (add bathLogs to Firestore rules):",error.message);});
-window.logFeed=logFeed;window.toggleNap=toggleNap;window.startNap=startNap;window.endNap=endNap;window.toggleTummyTime=toggleTummyTime;window.showBaby=showBaby;window.showMainTab=showMainTab;window.showLogTab=showLogTab;window.refreshApp=refreshApp;window.changeHistoryDay=changeHistoryDay;window.setHistoryDateFromPicker=setHistoryDateFromPicker;window.saveSettingsFromForm=saveSettingsFromForm;window.resetSettings=resetSettings;window.updateFormulaCostPreview=updateFormulaCostPreview;window.cycleTheme=cycleTheme;window.feedBoth=feedBoth;window.sleepBoth=sleepBoth;window.enableNotifications=enableNotifications;window.logBath=logBath;
+window.logFeed=logFeed;window.toggleNap=toggleNap;window.startNap=startNap;window.endNap=endNap;window.toggleTummyTime=toggleTummyTime;window.showBaby=showBaby;window.showMainTab=showMainTab;window.showLogTab=showLogTab;window.refreshApp=refreshApp;window.changeHistoryDay=changeHistoryDay;window.setHistoryDateFromPicker=setHistoryDateFromPicker;window.saveSettingsFromForm=saveSettingsFromForm;window.resetSettings=resetSettings;window.updateFormulaCostPreview=updateFormulaCostPreview;window.updateAgePreview=updateAgePreview;window.cycleTheme=cycleTheme;window.feedBoth=feedBoth;window.sleepBoth=sleepBoth;window.enableNotifications=enableNotifications;window.logBath=logBath;
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
 loadSettings();applyTheme();renderSettings();safeRender();setInterval(()=>{safeRender();},30000);
 </script>
