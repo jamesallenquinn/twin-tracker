@@ -63,7 +63,7 @@ async function snooDiscover(email, password) {
   const babies = Array.isArray(out.babies) ? out.babies : [];
 
   console.log(`[snoo] babies: ${babies.length}`);
-  babies.forEach((b, i) => console.log(`   baby[${i}] id=${b._id || b.babyId} name=${b.babyName || b.name}`));
+  babies.forEach((b, i) => { const bd = b.birthDate || b.birthdate || b.dob || b.dateOfBirth; const aw = bd ? Math.floor((Date.now() - new Date(bd).getTime()) / (7 * 86400000)) : "?"; console.log(`   baby[${i}] name=${b.babyName || b.name} ageWeeks=${aw} keys=${Object.keys(b).join(",")}`); });
   console.log(`[snoo] devices: ${devices.length}`);
   devices.forEach((d, i) => console.log(`   device[${i}] serial=${d.serialNumber} baby=${d.baby} thing=${d.awsIoT && d.awsIoT.thingName}`));
 
