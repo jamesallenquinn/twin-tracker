@@ -102,6 +102,15 @@ async function getSnooToken() {
   return snooTok.token;
 }
 
+// Restlessness from the SNOO soothing-level sequence (no timestamps available, just the
+// ladder of levels it climbed). Higher max + more LEVEL3+ escalations = baby fought it.
+const SOOTH_LEVEL = { BASELINE: 0, WEANING_BASELINE: 0, ONLINE: 0, LEVEL0: 0, LEVEL1: 1, LEVEL2: 2, LEVEL3: 3, LEVEL4: 4, PRETIMEOUT: 5 };
+function soothSummary(levels) {
+  let max = 0, ramps = 0;
+  for (const l of (levels || [])) { const v = SOOTH_LEVEL[l.level]; if (v == null) continue; if (v > max) max = v; if (v >= 3) ramps++; }
+  return { soothMax: max, soothRamps: ramps };
+}
+
 // ---- SNOO import (source of truth for sleep) ----
 async function importSnoo(dryRun) {
   const { snooGet, EP } = require("./snoo");
@@ -146,7 +155,8 @@ async function importSnoo(dryRun) {
     if (completed && durMin / 60000 < MIN_SESSION_MIN) { console.log(`[snoo] ${baby}: skip blip (${(durMin / 60000).toFixed(1)}m)`); continue; }
 
     const endIso = completed ? realEndIso : ""; // ongoing stays open (live); the sweep guarantees it closes
-    const fields = { baby, startTime: startIso, endTime: endIso, sleepType, source: "snoo" };
+    const sooth = soothSummary(levels);
+    const fields = { baby, startTime: startIso, endTime: endIso, sleepType, source: "snoo", soothMax: sooth.soothMax, soothRamps: sooth.soothRamps };
     const desc = `${baby} ${startIso} -> ${endIso || "(sleeping)"} [${sleepType}] ~${Math.round(durMin / 60000)}m`;
     if (dryRun) { console.log(`[snoo] WOULD upsert ${docId}: ${desc}`); }
     else { try { await patchDoc("napLogs", docId, fields); console.log(`[snoo] upserted ${docId}: ${desc}`); } catch (e) { console.log(`[snoo] write ${baby}: ${e.message}`); } }
