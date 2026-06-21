@@ -82,31 +82,26 @@ async function snooDiscover(email, password) {
     const start = new Date(); start.setUTCHours(0, 0, 0, 0);
     await tryGet("dailyProbe", EP.daily(firstId), { detailedLevels: "true", levels: "true", startTime: dailyStartTime(start) });
   }
-  console.log("[snoo] lastSession sample:", JSON.stringify(out.sessions).slice(0, 1000));
-  console.log("[snoo] dailyProbe sample:", JSON.stringify(out.dailyProbe).slice(0, 1500));
-
-  // Probe for a session-HISTORY endpoint (all recent sessions, not just last)
-  if (firstId) {
-    const sIso = new Date(Date.now() - 3 * 86400000).toISOString();
-    const eIso = new Date().toISOString();
-    const candidates = [
-      `/ss/me/v10/babies/${firstId}/sessions`,
-      `/ss/me/v10/babies/${firstId}/sessions?startTime=${sIso}&endTime=${eIso}`,
-      `/ss/me/v10/babies/${firstId}/sessions/aggregated`,
-      `/ss/v2/babies/${firstId}/sessions/aggregated`,
-      `/ss/me/v10/babies/${firstId}/sessions/list`,
-      `/analytics/sessions?babyId=${firstId}`,
-      `/ss/me/v10/babies/${firstId}/sessions/history`
-    ];
-    console.log("[snoo] === session-history endpoint probes ===");
-    for (const path of candidates) {
-      try {
-        const url = new URL("https://api-us-east-1-prod.happiestbaby.com" + path);
-        const res = await fetch(url, { headers: { "Accept": "application/json", "Authorization": "Bearer " + idToken, "User-Agent": "okhttp/4.12.0" } });
-        const body = await res.text();
-        console.log(`[snoo] PROBE ${res.status}  ${path.split("?")[0]}  ${res.ok ? body.slice(0, 300) : "(" + body.slice(0, 60).replace(/\s+/g, " ") + ")"}`);
-      } catch (e) { console.log(`[snoo] PROBE ERR ${path}: ${e.message}`); }
-    }
+  // Investigate soothing-level / timestamped detail for sleep-quality scoring.
+  const firstSess = out.sessions[firstId];
+  console.log("[snoo] FULL lastSession:", JSON.stringify(firstSess));
+  if (firstSess && firstSess.levels) console.log("[snoo] level[0] keys:", Object.keys(firstSess.levels[0] || {}).join(",") || "(none)");
+  const start = new Date(); start.setUTCHours(0, 0, 0, 0);
+  const st = dailyStartTime(start);
+  const probes = [
+    ["dailyV10", `/ss/me/v10/babies/${firstId}/sessions/aggregated/daily?detailedLevels=true&levels=true&startTime=${st}`],
+    ["dailyV2", `/ss/v2/babies/${firstId}/sessions/aggregated/daily?detailedLevels=true&levels=true&startTime=${st}`],
+    ["aggV10", `/ss/me/v10/babies/${firstId}/sessions/aggregated?startTime=${st}`],
+    ["lastDetail", `/ss/me/v10/babies/${firstId}/sessions/last?detailedLevels=true`],
+    ["statsV10", `/ss/me/v10/babies/${firstId}/sessions/stats?startTime=${st}`]
+  ];
+  console.log("[snoo] === soothing-level detail probes ===");
+  for (const [label, path] of probes) {
+    try {
+      const res = await fetch("https://api-us-east-1-prod.happiestbaby.com" + path, { headers: { "Accept": "application/json", "Authorization": "Bearer " + idToken, "User-Agent": "okhttp/4.12.0" } });
+      const body = await res.text();
+      console.log(`[snoo] PROBE ${res.status} ${label}: ${res.ok ? body.slice(0, 700) : "(" + body.slice(0, 50).replace(/\s+/g, " ") + ")"}`);
+    } catch (e) { console.log(`[snoo] PROBE ERR ${label}: ${e.message}`); }
   }
   return { idToken, data: out };
 }
