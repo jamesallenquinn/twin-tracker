@@ -82,18 +82,20 @@ async function snooDiscover(email, password) {
     const start = new Date(); start.setUTCHours(0, 0, 0, 0);
     await tryGet("dailyProbe", EP.daily(firstId), { detailedLevels: "true", levels: "true", startTime: dailyStartTime(start) });
   }
-  // Investigate soothing-level / timestamped detail for sleep-quality scoring.
-  const firstSess = out.sessions[firstId];
-  console.log("[snoo] FULL lastSession:", JSON.stringify(firstSess));
+  // Investigate soothing-level / timestamped detail for sleep-quality scoring (use a TWIN, not Sophia).
+  const twin = babies.find(b => ["Rowan", "Julian"].includes(b.babyName || b.name)) || {};
+  const probeId = (twin._id || twin.babyId) || firstId;
+  const firstSess = out.sessions[probeId];
+  console.log("[snoo] FULL lastSession (" + (twin.babyName || "?") + "):", JSON.stringify(firstSess));
   if (firstSess && firstSess.levels) console.log("[snoo] level[0] keys:", Object.keys(firstSess.levels[0] || {}).join(",") || "(none)");
   const start = new Date(); start.setUTCHours(0, 0, 0, 0);
   const st = dailyStartTime(start);
   const probes = [
-    ["dailyV10", `/ss/me/v10/babies/${firstId}/sessions/aggregated/daily?detailedLevels=true&levels=true&startTime=${st}`],
-    ["dailyV2", `/ss/v2/babies/${firstId}/sessions/aggregated/daily?detailedLevels=true&levels=true&startTime=${st}`],
-    ["aggV10", `/ss/me/v10/babies/${firstId}/sessions/aggregated?startTime=${st}`],
-    ["lastDetail", `/ss/me/v10/babies/${firstId}/sessions/last?detailedLevels=true`],
-    ["statsV10", `/ss/me/v10/babies/${firstId}/sessions/stats?startTime=${st}`]
+    ["dailyV10", `/ss/me/v10/babies/${probeId}/sessions/aggregated/daily?detailedLevels=true&levels=true&startTime=${st}`],
+    ["dailyV2", `/ss/v2/babies/${probeId}/sessions/aggregated/daily?detailedLevels=true&levels=true&startTime=${st}`],
+    ["aggV10", `/ss/me/v10/babies/${probeId}/sessions/aggregated?startTime=${st}`],
+    ["lastDetail", `/ss/me/v10/babies/${probeId}/sessions/last?detailedLevels=true`],
+    ["statsV10", `/ss/me/v10/babies/${probeId}/sessions/stats?startTime=${st}`]
   ];
   console.log("[snoo] === soothing-level detail probes ===");
   for (const [label, path] of probes) {
